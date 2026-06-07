@@ -1,0 +1,65 @@
+[
+  {
+    "hub_id": "HUB-A",
+    "name": "Origin Hub A",
+    "lat": 12.9716,
+    "lng": 77.5946,
+    "trust": 0.94,
+    "congestion": 0.2,
+    "cold_chain": false
+  },
+  {
+    "hub_id": "HUB-B",
+    "name": "Metro Sort Hub B",
+    "lat": 12.985,
+    "lng": 77.61,
+    "trust": 0.88,
+    "congestion": 0.35,
+    "cold_chain": false
+  },
+  {
+    "hub_id": "HUB-C",
+    "name": "Cold Transfer Hub C",
+    "lat": 12.965,
+    "lng": 77.64,
+    "trust": 0.91,
+    "congestion": 0.25,
+    "cold_chain": true
+  },
+  {
+    "hub_id": "COLD-HUB-C",
+    "name": "Certified Cold Hub C",
+    "lat": 12.968,
+    "lng": 77.646,
+    "trust": 0.96,
+    "congestion": 0.18,
+    "cold_chain": true
+  },
+  {
+    "hub_id": "HUB-D",
+    "name": "Bypass Hub D",
+    "lat": 12.95,
+    "lng": 77.59,
+    "trust": 0.86,
+    "congestion": 0.3,
+    "cold_chain": false
+  },
+  {
+    "hub_id": "HUB-E",
+    "name": "Last Mile Hub E",
+    "lat": 12.93,
+    "lng": 77.62,
+    "trust": 0.9,
+    "congestion": 0.22,
+    "cold_chain": false
+  },
+  {
+    "hub_id": "CUSTOMER-ZONE",
+    "name": "Customer Zone",
+    "lat": 12.92,
+    "lng": 77.63,
+    "trust": 0.99,
+    "congestion": 0.1,
+    "cold_chain": false
+  }
+]

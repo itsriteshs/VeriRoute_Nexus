@@ -1,0 +1,34 @@
+[
+  {
+    "from": "HUB-A",
+    "to": "HUB-B"
+  },
+  {
+    "from": "HUB-A",
+    "to": "HUB-D"
+  },
+  {
+    "from": "HUB-B",
+    "to": "HUB-E"
+  },
+  {
+    "from": "HUB-D",
+    "to": "HUB-E"
+  },
+  {
+    "from": "HUB-A",
+    "to": "HUB-C"
+  },
+  {
+    "from": "HUB-C",
+    "to": "COLD-HUB-C"
+  },
+  {
+    "from": "COLD-HUB-C",
+    "to": "HUB-E"
+  },
+  {
+    "from": "HUB-E",
+    "to": "CUSTOMER-ZONE"
+  }
+]

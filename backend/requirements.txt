@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+networkx
+python-dotenv
+sqlalchemy
+aiosqlite
+paho-mqtt
+pytest

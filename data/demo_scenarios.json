@@ -1,0 +1,10 @@
+[
+  "fake_scan",
+  "clone_scan",
+  "tamper",
+  "fail_hub",
+  "overload_hub",
+  "traffic_jam",
+  "weather_risk",
+  "temp_breach"
+]

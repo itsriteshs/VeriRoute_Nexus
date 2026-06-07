@@ -1,0 +1,13 @@
+[
+  {
+    "parcel_id": "MED-104",
+    "type": "medicine",
+    "source": "HUB-A",
+    "destination": "CUSTOMER-ZONE",
+    "priority": "high",
+    "sla_minutes": 45,
+    "temperature_limit_c": 25,
+    "current_temp_c": 24.3,
+    "carrier": "van"
+  }
+]

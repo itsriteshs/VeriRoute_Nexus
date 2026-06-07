@@ -1,0 +1,1 @@
+VeriRoute Nexus verifies logistics events, not people. It uses scan-time GPS only, no continuous worker tracking, no required customer personal data in the demo, demo parcel IDs, and hub-level trust scores rather than worker-level trust scores.
