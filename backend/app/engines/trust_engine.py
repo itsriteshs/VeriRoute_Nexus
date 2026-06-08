@@ -75,15 +75,38 @@ def update_hub_trust(
         raise ValueError("Hub not found")
 
     old_score = float(hub.trust_score)
-    delta = calculate_trust_delta(decision, failed_checks)
-    if esp_now_trust_delta is not None:
-        delta += float(esp_now_trust_delta)
-    new_score = clamp_score(old_score + delta)
     now = utc_now_iso()
+
+    # Bayesian update logic
+    alpha_delta = 0
+    beta_delta = 0
+
+    if decision == constants.DECISION_ACCEPTED and not failed_checks:
+        alpha_delta = 1
+    elif decision == constants.DECISION_HOLD or "tamper" in failed_checks:
+        beta_delta = 3
+    elif decision == constants.DECISION_BLOCKED:
+        beta_delta = 2
+    elif decision == constants.DECISION_WARNING or decision == constants.DECISION_REROUTED:
+        beta_delta = 1
+
+    if esp_now_trust_delta is not None:
+        if esp_now_trust_delta > 0:
+            alpha_delta += 1
+        elif esp_now_trust_delta < 0:
+            beta_delta += 1
+
+    hub.alpha += alpha_delta
+    hub.beta += beta_delta
+
+    denom = hub.alpha + hub.beta
+    new_score = round(float(hub.alpha) / denom, 2) if denom > 0 else 1.0
+    delta = round(new_score - old_score, 2)
 
     hub.trust_score = new_score
     hub.updated_at = now
-    if delta < 0:
+    
+    if alpha_delta < beta_delta:
         hub.anomaly_count += 1
     if new_score < 0.40:
         hub.status = "quarantined"

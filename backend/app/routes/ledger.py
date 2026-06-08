@@ -13,6 +13,7 @@ router = APIRouter(prefix="/ledger", tags=["ledger"])
 
 from typing import Optional, Any
 import json
+import hashlib
 
 from app.core import constants
 from app.db.models import RouteDecision, TrustHistory, ImmuneCheck
@@ -33,6 +34,9 @@ def serialize_event(event: Event) -> dict[str, object]:
         "severity": event.severity,
         "reason": event.reason,
         "raw_payload": event.raw_payload,
+        "prev_hash": event.prev_hash,
+        "event_hash": event.event_hash,
+        "synced": event.synced,
     }
 
 
@@ -146,4 +150,63 @@ def parcel_events(parcel_id: str, db: Session = Depends(get_db)):
         "trust_events": trust_events_list,
         "immune_checks": checks_list,
     }
+
+
+@router.get("/verify/{parcel_id}")
+def verify_ledger_chain(parcel_id: str, db: Session = Depends(get_db)):
+    events = (
+        db.query(Event)
+        .filter(Event.parcel_id == parcel_id)
+        .order_by(Event.id.asc())
+        .all()
+    )
+    
+    verified = True
+    corrupted_event_id = None
+    reason = None
+    expected_prev_hash = "GENESIS"
+    
+    details = []
+    for event in events:
+        actual_prev_hash = event.prev_hash or "GENESIS"
+        if actual_prev_hash != expected_prev_hash:
+            verified = False
+            corrupted_event_id = event.id
+            reason = f"Hash mismatch: Event {event.id} expected prev_hash '{expected_prev_hash}', got '{actual_prev_hash}'"
+            break
+            
+        et = event.event_type or ""
+        pi = event.parcel_id or ""
+        hi = event.hub_id or ""
+        ts = event.timestamp or ""
+        rp = event.raw_payload or ""
+        ph = actual_prev_hash
+        
+        payload_str = f"{et}{pi}{hi}{ts}{rp}{ph}"
+        computed_hash = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
+        
+        if event.event_hash != computed_hash:
+            verified = False
+            corrupted_event_id = event.id
+            reason = f"Hash corruption: Event {event.id} computed hash '{computed_hash}' does not match stored event_hash '{event.event_hash}'"
+            break
+            
+        details.append({
+            "event_id": event.id,
+            "event_type": event.event_type,
+            "prev_hash": actual_prev_hash,
+            "event_hash": event.event_hash,
+            "verified": True
+        })
+        expected_prev_hash = event.event_hash
+        
+    return {
+        "parcel_id": parcel_id,
+        "verified": verified,
+        "chain_length": len(events),
+        "corrupted_event_id": corrupted_event_id,
+        "reason": reason,
+        "details": details
+    }
+
 

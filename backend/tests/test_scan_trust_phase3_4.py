@@ -28,7 +28,7 @@ def test_valid_scan_accepts_and_updates_trust_route_and_ledger():
         assert data["decision"] == "ACCEPTED"
         assert data["led"] == "GREEN"
         assert data["immune_checks"]["geofence"] == "PASS"
-        assert data["trust_update"]["new_score"] == 0.99
+        assert data["trust_update"]["new_score"] == 0.98
         assert data["route_decision"]["selected_next_hop"] == "HUB-B"
         events = client.get("/ledger/events").json()["events"]
         assert any(event["event_type"] == "movement_accepted" for event in events)
@@ -53,7 +53,7 @@ def test_fake_scan_blocks_geofence_and_drops_hub_trust():
         assert data["led"] == "RED"
         assert data["failed_checks"] == ["geofence"]
         assert data["trust_update"]["hub_id"] == "HUB-C"
-        assert data["trust_update"]["new_score"] == 0.5
+        assert data["trust_update"]["new_score"] == 0.64
         events = client.get("/ledger/events").json()["events"]
         assert any(event["event_type"] == "fake_scan_blocked" for event in events)
         parcel = client.get("/parcels/MED-104").json()["parcel"]

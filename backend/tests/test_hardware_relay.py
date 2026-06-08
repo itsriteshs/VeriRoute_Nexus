@@ -128,10 +128,10 @@ def test_p2p_handshake_updates_trust_score():
             data = response.json()
             assert data["status"] == "success"
 
-            # Check new trust score (0.92 + 0.02 = 0.94)
+            # Check new trust score (0.92 updated with Bayesian alpha increment)
             hubs_res_after = client.get("/hubs").json()["hubs"]
             hub_b_after = next(h for h in hubs_res_after if h["id"] == "HUB-B")
-            assert hub_b_after["trust_score"] == 0.94
+            assert hub_b_after["trust_score"] == 0.92
 
             # Assert ws events: p2p_handshake, trust_updated, metrics_updated
             events = []

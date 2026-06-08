@@ -1,8 +1,9 @@
 # Owner: Person 1 — Backend + Algorithms Lead
 # Purpose: SQLAlchemy models for the Phase 1 backend ledger and demo state.
 
-from sqlalchemy import Boolean, Float, Integer, String, Text
+from sqlalchemy import Boolean, Float, Integer, String, Text, event, text
 from sqlalchemy.orm import Mapped, mapped_column
+import hashlib
 
 from app.db.database import Base
 
@@ -83,6 +84,33 @@ class Event(Base):
     prev_hash: Mapped[str | None] = mapped_column(String, nullable=True)
     event_hash: Mapped[str | None] = mapped_column(String, nullable=True)
     synced: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+@event.listens_for(Event, "before_insert")
+def receive_before_insert(mapper, connection, target):
+    # Only calculate prev_hash if not already set manually and parcel_id exists
+    if not target.prev_hash and target.parcel_id:
+        result = connection.execute(
+            text("SELECT event_hash FROM events WHERE parcel_id = :parcel_id ORDER BY id DESC LIMIT 1"),
+            {"parcel_id": target.parcel_id}
+        ).fetchone()
+        if result and result[0]:
+            target.prev_hash = result[0]
+        else:
+            target.prev_hash = "GENESIS"
+    elif not target.prev_hash:
+        target.prev_hash = "GENESIS"
+
+    # Calculate event_hash = SHA256(event_type + parcel_id + hub_id + timestamp + raw_payload + prev_hash)
+    et = target.event_type or ""
+    pi = target.parcel_id or ""
+    hi = target.hub_id or ""
+    ts = target.timestamp or ""
+    rp = target.raw_payload or ""
+    ph = target.prev_hash or ""
+    
+    payload_str = f"{et}{pi}{hi}{ts}{rp}{ph}"
+    target.event_hash = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
 
 
 class ImmuneCheck(Base):
