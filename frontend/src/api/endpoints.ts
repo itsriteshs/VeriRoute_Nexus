@@ -14,6 +14,7 @@ export const endpoints = {
   parcels: '/parcels',
   nextHop: '/route/next-hop',
   scan: '/scan',
+  hardwareScan: '/hardware/scan',
   fakeScan: '/scan/fake',
   cloneScan: '/scan/clone',
   tamperScan: '/scan/tamper',

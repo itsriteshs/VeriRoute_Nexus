@@ -63,16 +63,22 @@ Response:
 
 ## POST /hardware/scan
 
-Request:
+Device-native request:
 
 ```json
-{"device_id":"ESP32-HUB-A-01","hub_id":"HUB-A","parcel_id":"MED-104","rfid_uid":"RFID-DEMO-104","qr_payload":"http://localhost:5173/scan/HUB-A?parcel_id=MED-104","temperature_c":24.3,"button_pressed":true,"lat":12.9716,"lng":77.5946,"timestamp":"2026-06-07T10:00:00Z"}
+{"device_id":"ESP32-HUB-A-01","hub_id":"HUB-A","parcel_id":"MED-104","rfid_uid":"RFID4A8B9C104","qr_payload":"http://localhost:5173/scan/HUB-A?parcel_id=MED-104","temperature_c":24.3,"button_pressed":false,"lat":11.0168,"lng":76.9558,"timestamp":"2026-06-08T15:00:00Z","ble_verified":true,"ble_rssi_m":1.2,"esp_now_prior_acceptance":false,"esp_now_prior_hub":"","esp_now_trust_delta":0.0}
 ```
 
-Response:
+Completed response:
 
 ```json
-{"accepted":true,"led":"green","decision":"verified","message":"Movement proof accepted for MED-104 at HUB-A"}
+{"status":"hardware_scan_completed","accepted":true,"decision":"ACCEPTED","action":"UPDATE_LOCATION","led":"GREEN","parcel_id":"MED-104","hub_id":"HUB-A","requires_gps":false,"message":"Movement accepted because identity, GPS geofence, route validity, speed plausibility, temperature, and tamper checks passed."}
+```
+
+No-GPS handoff response:
+
+```json
+{"status":"hardware_scan_received","accepted":false,"requires_gps":true,"gps_scan_url":"/scan/HUB-A?parcel_id=MED-104","message":"RFID and temperature captured. Awaiting phone GPS proof."}
 ```
 
 ## POST /scan/fake

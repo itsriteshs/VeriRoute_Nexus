@@ -71,3 +71,65 @@ def test_hardware_scan_contracts():
         )
         assert res2.status_code == 200
         assert res2.json()["status"] == "hardware_scan_completed"
+
+
+def test_hardware_submission_native_payload_contract():
+    with TestClient(app) as client:
+        client.post("/demo/reset").raise_for_status()
+
+        res = client.post(
+            "/hardware/scan",
+            json={
+                "device_id": "ESP32-HUB-A-01",
+                "hub_id": "HUB-A",
+                "parcel_id": "MED-104",
+                "rfid_uid": "RFID4A8B9C104",
+                "qr_payload": "http://localhost:5173/scan/HUB-A?parcel_id=MED-104",
+                "temperature_c": 24.3,
+                "button_pressed": False,
+                "lat": 11.0168,
+                "lng": 76.9558,
+                "timestamp": "2026-06-08T15:00:00Z",
+                "ble_verified": True,
+                "ble_rssi_m": 1.2,
+                "esp_now_prior_acceptance": False,
+                "esp_now_prior_hub": "",
+                "esp_now_trust_delta": 0.0,
+            },
+        )
+
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "hardware_scan_completed"
+        assert data["accepted"] is True
+        assert data["decision"] == "ACCEPTED"
+        assert data["led"] == "GREEN"
+        assert data["message"]
+        assert data["hardware_context"]["scanner_id"] == "ESP32-HUB-A-01"
+
+
+def test_hardware_submission_without_gps_returns_phone_scan_url():
+    with TestClient(app) as client:
+        client.post("/demo/reset").raise_for_status()
+
+        res = client.post(
+            "/hardware/scan",
+            json={
+                "device_id": "ESP32-HUB-A-01",
+                "hub_id": "HUB-A",
+                "parcel_id": "MED-104",
+                "rfid_uid": "RFID4A8B9C104",
+                "qr_payload": "http://localhost:5173/scan/HUB-A?parcel_id=MED-104",
+                "temperature_c": 24.3,
+                "button_pressed": False,
+            },
+        )
+
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "hardware_scan_received"
+        assert data["accepted"] is False
+        assert data["requires_gps"] is True
+        assert data["gps_scan_url"] == "/scan/HUB-A?parcel_id=MED-104"
+        assert data["message"] == "RFID and temperature captured. Awaiting phone GPS proof."
+        assert data["hardware_context"]["scanner_id"] == "ESP32-HUB-A-01"

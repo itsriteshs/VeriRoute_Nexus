@@ -68,13 +68,13 @@ All API contracts must be updated in `API_CONTRACT.md` before implementation cha
 
 ## Future Phase: Hardware Integration
 
-Person 3's upgraded hardware plan is a Dual-Node SwarmFlow Relay Network with physical `HUB-A` and `HUB-B` SmartHub nodes, an ESP-NOW peer-to-peer handshake path, and an ESP32-C3 BLE Smart Parcel Tag. Phase 1 only prepares the backend ledger foundation; it does not implement hardware scan or peer-to-peer handshake endpoints.
+Person 3's upgraded hardware plan is a Dual-Node SwarmFlow Relay Network with physical `HUB-A` and `HUB-B` SmartHub nodes, an ESP-NOW peer-to-peer handshake path, and an ESP32-C3 BLE Smart Parcel Tag. The backend now exposes direct hardware scan and peer-to-peer handshake endpoints for rehearsal.
 
-- `POST /hardware/scan` will later accept optional BLE fields: `ble_verified`, `ble_rssi_m`.
-- `POST /hardware/scan` will later accept optional ESP-NOW fields: `esp_now_prior_acceptance`, `esp_now_prior_hub`, `esp_now_trust_delta`.
-- `POST /hardware/p2p-handshake` will later log `p2p_handshake` events between `HUB-A` and `HUB-B`.
+- `POST /hardware/scan` accepts device-native fields from `hardware_submission`: `device_id`, `button_pressed`, flat `lat`/`lng`, optional BLE fields, and optional ESP-NOW cache fields.
+- If GPS is missing, `POST /hardware/scan` returns `requires_gps: true` plus `/scan/{hub_id}?parcel_id=...` for the phone GPS handoff.
+- `POST /hardware/p2p-handshake` logs `p2p_handshake` events between `HUB-A` and `HUB-B`.
 
-The Phase 1 event ledger stores `event_type` as text and `raw_payload` as JSON text so future ESP-NOW/BLE metadata can be recorded without changing `GET /ledger/events`.
+The event ledger stores `event_type` as text and `raw_payload` as JSON text so ESP-NOW/BLE metadata can be recorded without changing `GET /ledger/events`.
 
 ## Phase 2: PacketFlow Routing
 

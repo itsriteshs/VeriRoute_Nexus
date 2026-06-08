@@ -2,7 +2,7 @@
 # Purpose: Pydantic request and response schemas for Phase 7 + Phase 8 hardware scan and dual-node ESP-NOW relay handshakes.
 
 from typing import Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field, model_validator
 
 
 class HardwareGPSPayload(BaseModel):
@@ -14,12 +14,15 @@ class HardwareGPSPayload(BaseModel):
 class HardwareScanRequest(BaseModel):
     parcel_id: str
     hub_id: str
-    scanner_id: str
+    scanner_id: str = Field(validation_alias=AliasChoices("scanner_id", "device_id"))
     rfid_verified: bool = True
     qr_verified: Optional[bool] = None
     temperature_c: Optional[float] = None
-    tamper: bool = False
+    tamper: bool = Field(default=False, validation_alias=AliasChoices("tamper", "button_pressed"))
     gps: Optional[HardwareGPSPayload] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    timestamp: Optional[str] = None
     carrier_type: Optional[str] = None
 
     # BLE optional fields
@@ -35,9 +38,30 @@ class HardwareScanRequest(BaseModel):
     esp_now_trust_delta: Optional[float] = None
     esp_now_message_type: Optional[str] = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def accept_device_native_payload(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+
+        next_data = dict(data)
+        if next_data.get("gps") is None and (
+            next_data.get("lat") is not None or next_data.get("lng") is not None
+        ):
+            next_data["gps"] = {
+                "lat": next_data.get("lat"),
+                "lng": next_data.get("lng"),
+            }
+
+        if next_data.get("qr_verified") is None and next_data.get("qr_payload"):
+            next_data["qr_verified"] = True
+
+        return next_data
+
 
 class HardwareScanResponse(BaseModel):
     status: str
+    accepted: Optional[bool] = None
     decision: Optional[str] = None
     action: Optional[str] = None
     led: Optional[str] = None
@@ -51,6 +75,7 @@ class HardwareScanResponse(BaseModel):
     route_decision: Optional[dict[str, Any]] = None
     hardware_context: dict[str, Any]
     reason: str
+    message: Optional[str] = None
 
 
 class P2PHandshakeRequest(BaseModel):

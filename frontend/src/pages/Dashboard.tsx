@@ -12,6 +12,10 @@ type DashboardProps = {
 };
 
 export default function Dashboard({ demo }: DashboardProps) {
+  const runDemo = () => {
+    void demo.acceptScan();
+  };
+
   return (
     <main className="dashboard">
       <DemoEventToast message={demo.toast} />
@@ -25,7 +29,7 @@ export default function Dashboard({ demo }: DashboardProps) {
         </div>
 
         <div className="dashboard-header__actions">
-          <button className="button button--primary" type="button">
+          <button className="button button--primary" onClick={runDemo} type="button">
             <Play size={17} strokeWidth={2} />
             Run Demo
           </button>

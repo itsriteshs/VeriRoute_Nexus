@@ -125,23 +125,31 @@ Returns the latest 50 route decisions ordered newest first. `full_route` and `ca
 
 ## POST /hardware/scan
 
-Future phase only. Do not implement this endpoint in Phase 1.
+Direct SmartHub scan endpoint for the ESP32 firmware, CLI simulator, or hardware bridge. The backend also accepts the typed backend shape with `scanner_id`, nested `gps`, and `tamper`.
 
-Request:
-
-```json
-{"device_id":"ESP32-HUB-A-01","hub_id":"HUB-A","parcel_id":"MED-104","rfid_uid":"RFID-DEMO-104","qr_payload":"http://localhost:5173/scan/HUB-A?parcel_id=MED-104","temperature_c":24.3,"button_pressed":true,"lat":12.9716,"lng":77.5946,"timestamp":"2026-06-07T10:00:00Z","ble_verified":true,"ble_rssi_m":2.4,"esp_now_prior_acceptance":true,"esp_now_prior_hub":"HUB-A","esp_now_trust_delta":0.02}
-```
-
-Response:
+Device-native request:
 
 ```json
-{"accepted":true,"led":"green","decision":"verified","message":"Movement proof accepted for MED-104 at HUB-A"}
+{"device_id":"ESP32-HUB-A-01","hub_id":"HUB-A","parcel_id":"MED-104","rfid_uid":"RFID4A8B9C104","qr_payload":"http://localhost:5173/scan/HUB-A?parcel_id=MED-104","temperature_c":24.3,"button_pressed":false,"lat":11.0168,"lng":76.9558,"timestamp":"2026-06-08T15:00:00Z","ble_verified":true,"ble_rssi_m":1.2,"esp_now_prior_acceptance":false,"esp_now_prior_hub":"","esp_now_trust_delta":0.0}
 ```
 
-## Future POST /hardware/p2p-handshake
+`device_id` maps to `scanner_id`, `button_pressed` maps to `tamper`, and flat `lat`/`lng` maps to backend `gps`.
 
-Future phase only. This endpoint will later log `p2p_handshake` events between physical `HUB-A` and `HUB-B` SmartHub nodes. Expected ESP-NOW metadata may include `sender_hub`, `receiver_hub`, `parcel_id`, `message_type`, and `trust_delta`; BLE parcel tag metadata may include `parcel_id`, `temperature_c`, `tamper`, and RSSI/proximity estimates.
+Completed response:
+
+```json
+{"status":"hardware_scan_completed","accepted":true,"decision":"ACCEPTED","action":"UPDATE_LOCATION","led":"GREEN","parcel_id":"MED-104","hub_id":"HUB-A","requires_gps":false,"message":"Movement accepted because identity, GPS geofence, route validity, speed plausibility, temperature, and tamper checks passed."}
+```
+
+No-GPS handoff response:
+
+```json
+{"status":"hardware_scan_received","accepted":false,"requires_gps":true,"gps_scan_url":"/scan/HUB-A?parcel_id=MED-104","message":"RFID and temperature captured. Awaiting phone GPS proof."}
+```
+
+## POST /hardware/p2p-handshake
+
+Logs `p2p_handshake` events between physical `HUB-A` and `HUB-B` SmartHub nodes. ESP-NOW metadata may include `sender_hub`, `receiver_hub`, `parcel_id`, `message_type`, `trust_delta`, `failed_check`, `eta_sec`, `carrier_type`, and `timestamp`.
 
 ## GET /ledger/events
 

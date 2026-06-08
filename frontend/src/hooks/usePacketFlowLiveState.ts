@@ -469,23 +469,33 @@ export function usePacketFlowLiveState(): LiveDemoState {
     } as LiveDemoState;
   }
 
+  const liveHubs = hubs.length > 0 ? hubs : mockState.hubs;
+  const liveEdges = edges.length > 0 ? edges : mockState.edges;
+  const liveRouteDecision = routeDecision ?? mockState.routeDecision;
+  const liveParcel = parcel ?? mockState.parcel;
+  const liveActiveRoute = activeRoute.length > 0 ? activeRoute : liveRouteDecision.full_route;
+  const liveMovementProof = movementProof ?? mockState.movementProof;
+  const liveCandidateScores = candidateScores.length > 0 ? candidateScores : mockState.candidateScores;
+  const liveMetrics = metrics.length > 0 ? metrics : mockState.metrics;
+  const liveImpactMetrics = impactMetrics ?? mockState.impactMetrics;
+
   return {
-    hubs,
-    edges,
-    activeRoute,
-    parcel,
-    routeDecision,
-    movementProof,
-    candidateScores,
+    hubs: liveHubs,
+    edges: liveEdges,
+    activeRoute: liveActiveRoute,
+    parcel: liveParcel,
+    routeDecision: liveRouteDecision,
+    movementProof: liveMovementProof,
+    candidateScores: liveCandidateScores,
     alerts,
-    selectedAlert,
+    selectedAlert: selectedAlert ?? mockState.selectedAlert,
     selectAlert: setSelectedAlert,
     ledgerEvents,
     agentOpsEvent,
     coldChainState,
     pulseHandshake,
-    metrics,
-    impactMetrics,
+    metrics: liveMetrics,
+    impactMetrics: liveImpactMetrics,
     toast,
     acceptScan,
     triggerHandshake,

@@ -97,6 +97,7 @@ async def hardware_scan(payload: HardwareScanRequest, db: Session = Depends(get_
         reason = "RFID and temperature captured. Awaiting phone GPS proof."
         return {
             "status": "hardware_scan_received",
+            "accepted": False,
             "decision": None,
             "action": None,
             "led": None,
@@ -110,6 +111,7 @@ async def hardware_scan(payload: HardwareScanRequest, db: Session = Depends(get_
             "route_decision": None,
             "hardware_context": context,
             "reason": reason,
+            "message": reason,
         }
 
     # Construct ScanRequest Pydantic model
@@ -171,6 +173,7 @@ async def hardware_scan(payload: HardwareScanRequest, db: Session = Depends(get_
 
     return {
         "status": "hardware_scan_completed",
+        "accepted": result["decision"] == constants.DECISION_ACCEPTED,
         "decision": result["decision"],
         "action": result["action"],
         "led": result["led"],
@@ -184,6 +187,7 @@ async def hardware_scan(payload: HardwareScanRequest, db: Session = Depends(get_
         "route_decision": result.get("route_decision"),
         "hardware_context": context,
         "reason": result["reason"],
+        "message": result["reason"],
     }
 
 

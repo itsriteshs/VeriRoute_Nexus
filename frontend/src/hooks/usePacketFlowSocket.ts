@@ -1,7 +1,7 @@
 // Owner: Person 2 — Frontend + Digital Twin + UX Lead
 // Purpose: React hook managing active WebSocket connections and status.
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PacketFlowSocket, type SocketStatus } from '../api/websocket';
 
 export function usePacketFlowSocket(onMessage: (msg: any) => void) {
@@ -20,17 +20,17 @@ export function usePacketFlowSocket(onMessage: (msg: any) => void) {
     };
   }, [onMessage]);
 
-  const connect = () => {
+  const connect = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.connect();
     }
-  };
+  }, []);
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
-  };
+  }, []);
 
   return {
     status,
