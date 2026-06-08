@@ -16,6 +16,7 @@ export const sidebarItems = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Digital Twin', path: '/digital-twin' },
   { label: 'Parcels', path: '/parcels' },
+  { label: 'Ledger', path: '/ledger' },
   { label: 'ImmuneNet', path: '/immunenet' },
   { label: 'Trust Board', path: '/trust-board' },
   { label: 'Demo Controls', path: '/demo-controls' },

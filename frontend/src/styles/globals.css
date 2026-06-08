@@ -2811,6 +2811,38 @@ input:focus-visible,
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+.demo-action:disabled {
+  cursor: wait;
+  opacity: 0.62;
+  transform: none;
+}
+
+.demo-control-error {
+  color: #9f1d1d;
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  margin-top: 0.45rem;
+  text-transform: uppercase;
+}
+
+.detail-stack {
+  display: grid;
+  gap: 0.58rem;
+  margin: 0.85rem 0 1rem;
+}
+
+.detail-stack p {
+  color: var(--aether-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.detail-stack strong {
+  color: var(--aether-secondary);
+}
+
 .demo-action--acceptScan,
 .demo-action--triggerHandshake {
   box-shadow:

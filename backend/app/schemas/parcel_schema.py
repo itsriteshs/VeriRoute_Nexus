@@ -6,6 +6,18 @@ from pydantic import BaseModel
 from app.schemas.event_schema import EventOut
 
 
+class ParcelCreateRequest(BaseModel):
+    id: str = "MED-104"
+    parcel_type: str = "medicine"
+    source_hub: str = "HUB-A"
+    destination_hub: str = "CUSTOMER-ZONE"
+    priority: str = "high"
+    sla_minutes: int = 45
+    temperature_limit: float | None = 25.0
+    current_temperature: float | None = None
+    carrier_type: str = "van"
+
+
 class ParcelOut(BaseModel):
     id: str
     parcel_type: str
@@ -29,3 +41,8 @@ class ParcelsResponse(BaseModel):
 class ParcelDetailResponse(BaseModel):
     parcel: ParcelOut
     latest_events: list[EventOut]
+
+
+class ParcelCreateResponse(BaseModel):
+    parcel: ParcelOut
+    initial_route: dict

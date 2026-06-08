@@ -110,7 +110,28 @@ def test_temp_breach():
         )
         assert breach_res.status_code == 200
         assert breach_res.json()["cold_chain_status"] == "BREACH"
+        assert "COLD-HUB-C" in breach_res.json()["new_route"]
 
         # Events ledger should contain temperature_breach
         events = client.get("/ledger/events").json()["events"]
         assert any(e["event_type"] == "temperature_breach" for e in events)
+
+
+def test_temp_breach_prefers_cold_hub_even_if_payload_hub_is_b():
+    with TestClient(app) as client:
+        client.post("/demo/reset").raise_for_status()
+
+        breach_res = client.post(
+            "/scenario/temp-breach",
+            json={
+                "parcel_id": "MED-104",
+                "hub_id": "HUB-B",
+                "temperature_c": 29.2,
+            },
+        )
+
+        assert breach_res.status_code == 200
+        data = breach_res.json()
+        assert data["decision"] == "REROUTED"
+        assert data["cold_chain_status"] == "BREACH"
+        assert "COLD-HUB-C" in data["new_route"]

@@ -13,6 +13,7 @@ Frontend + Digital Twin + UX Lead
 | Date | Progress | Proof/Link |
 | --- | --- | --- |
 | 2026-06-07 | Repository scaffold created | Initial commit |
+| 2026-06-08 | Integrated active React dashboard with backend API, WebSocket snapshot refresh, scan route, ledger route, parcel detail route, and missing scenario buttons | `frontend/src/hooks/usePacketFlowLiveState.ts`, `frontend/src/App.tsx`, `frontend/src/pages/ScanPage.tsx`, `frontend/src/pages/LedgerPage.tsx`, `frontend/src/pages/ParcelDetails.tsx` |
 
 ## Current Working Branch
 
@@ -29,10 +30,16 @@ Ritesh-june-8th
 - [x] Phase 5 completed: auditability layer for alerts, trust board, event ledger, check traces, and impact metrics.
 - [x] Frontend segregation pass completed: sidebar routes now render distinct in-app pages with shared local demo state.
 - [x] Typography updated to Inter for display/body and JetBrains Mono for labels/technical metadata.
+- [x] Added backend API client, endpoint map, mappers, WebSocket connector, and live state hook with local mock fallback.
+- [x] Added active live demo buttons for Create MED-104, Traffic Jam, Weather Risk, Clone Scan, and Tamper Event.
+- [x] Wired `/ledger`, `/parcels/:parcelId`, and `/scan/:hubId` into the active TS route system.
+- [x] Added scan page with browser GPS, valid/fake coordinate fallbacks, backend `POST /scan`, decision, LED, and reason display.
+- [x] Added `npm run typecheck` and TypeScript config for active TS/TSX frontend files.
 
 ## In-progress Tasks
 
-- [ ] Phase 6 planning after page segregation review.
+- [ ] Final browser rehearsal with live backend and physical Person 3 hardware.
+- [ ] Replace or remove remaining old JSX placeholder files once the active TS routes are frozen.
 
 ## Blockers
 
@@ -88,6 +95,15 @@ Ritesh-june-8th
   - `frontend/src/pages/ImmuneNetPage.tsx`
   - `frontend/src/pages/TrustBoardPage.tsx`
   - `frontend/src/pages/DemoControlsPage.tsx`
+  - `frontend/src/pages/LedgerPage.tsx`
+  - `frontend/src/pages/ParcelDetails.tsx`
+  - `frontend/src/pages/ScanPage.tsx`
+  - `frontend/src/api/client.ts`
+  - `frontend/src/api/endpoints.ts`
+  - `frontend/src/api/mappers.ts`
+  - `frontend/src/api/websocket.ts`
+  - `frontend/src/hooks/usePacketFlowLiveState.ts`
+  - `frontend/tsconfig.json`
   - `frontend/src/data/mockData.ts`
   - `frontend/src/types/packetflow.ts`
   - `frontend/src/utils/eventMappers.ts`
@@ -98,7 +114,7 @@ Ritesh-june-8th
   - `frontend/src/hooks/useDemoState.ts`
 - Documentation:
   - `what_is_done_person_2.md`
-- Backend logic and hardware firmware were not touched.
+- Backend logic was coordinated through API contracts only; hardware firmware was not touched.
 
 ## What others need to know
 
@@ -145,7 +161,7 @@ Ritesh-june-8th
   - Reset restores baseline trust board, metrics, alerts, selected alert, ledger rows, cold-chain state, and route state.
 - Frontend page segregation added:
   - `App.tsx` now owns a lightweight history-based router and keeps one shared `useDemoState()` instance above every page.
-  - Sidebar links route to `/dashboard`, `/digital-twin`, `/parcels`, `/immunenet`, `/trust-board`, and `/demo-controls` without reloading the app.
+  - Sidebar links route to `/dashboard`, `/digital-twin`, `/parcels`, `/ledger`, `/immunenet`, `/trust-board`, and `/demo-controls` without reloading the app.
   - Dashboard is now a clean overview instead of a full component dump.
   - Digital Twin page focuses on the graph, route state, PacketFlow decision, and score context.
   - Parcels page focuses on selected parcel details, movement proof, route decision, and parcel ledger.
@@ -153,12 +169,19 @@ Ritesh-june-8th
   - Trust Board page focuses on hub reputation, trust decay, impact metrics, route behavior, and twin context.
   - Demo Controls page focuses on judge scenario driving, local events, AgentOps, cold-chain state, and event ledger.
   - `design.md`, `tokens.css`, and `globals.css` now use Inter for display/body and JetBrains Mono for labels/technical metadata.
+- Live backend integration added:
+  - `usePacketFlowLiveState.ts` checks backend health, connects to `WS /ws`, syncs `/demo/snapshot`, and polls if WebSocket is disconnected.
+  - Active demo controls call backend endpoints for create parcel, scan, P2P handshake, fake scan, hub failure, hub overload, traffic jam, weather risk, temperature breach, clone scan, tamper, and reset.
+  - `/scan/:hubId` sends GPS-backed or fallback scan payloads to `POST /scan` and displays decision, LED, failed checks, and reason.
+  - `/ledger` loads backend ledger events from `GET /ledger/events`.
+  - `/parcels/:parcelId` loads backend parcel details, latest route, and parcel ledger.
+  - `npm run typecheck` is available for active TS/TSX frontend quality checks.
 
 ## Next 3 Tasks
 
-1. Phase 6: connect the local demo state to stable backend API responses when approved.
-2. Phase 6: add live WebSocket updates for parcel movement, trust decay, proof checks, ledger rows, and alerts.
-3. Phase 6: build scan page / hardware-facing flow, parcel creation, route comparison, and missing scenario actions when approved.
+1. Run full browser rehearsal with backend server, including refresh persistence.
+2. Coordinate with Person 3 on hardware scan URL and GPS fallback flow.
+3. Remove or port remaining unused JSX placeholders after demo-critical routes are stable.
 
 ## Integration Notes
 
@@ -168,6 +191,9 @@ Ritesh-june-8th
 - Phase 4 uses local React state only; backend APIs, WebSockets, scan page, full event ledger, and hardware integration are still intentionally untouched.
 - Phase 5 uses local React state only; backend APIs, WebSockets, scan page, and hardware integration are still intentionally untouched.
 - Segregation pass uses local React state only; backend APIs, WebSockets, scan page, full parcel creation, route comparison, and hardware integration are still intentionally untouched.
+- Current live integration calls backend APIs and WebSocket-driven snapshot refresh while preserving local mock fallback when the backend is offline.
+- Active scan, ledger, parcel detail, and demo-control routes are wired into the TS app. Some older JSX placeholder files still exist but are not the active source of truth.
+- Person 3 physical hardware firmware is not complete yet; the frontend now exposes backend-compatible scan and proof flows for rehearsal.
 - Keep `frontend/src/styles/tokens.css` as the Aether design-token source for future Person 2 UI work.
 
 ## Testing Proof
@@ -184,10 +210,11 @@ Ritesh-june-8th
 - Phase 5: live browser check verified fake scan, cold-chain breach, HUB-B failure, ESP-NOW handshake, blocked ledger filter, `HUB-C` trust decay to `0.35`, `QUARANTINE_MOVEMENT_CLAIM`, `REROUTE_TO_COLD_HUB`, and no `TODO` scaffold text.
 - Segregation pass: `npm run build` passes after route/page split and typography update.
 - Segregation pass: live browser check verified `/dashboard`, `/digital-twin`, `/parcels`, `/immunenet`, `/trust-board`, `/demo-controls`, active sidebar state, no visible `TODO`, shared fake-scan state across pages, and reset clearing trust decay.
+- Live integration pass: `npm run typecheck` and `npm run build` pass after backend route wiring, scan page, ledger page, parcel detail page, and additional demo buttons.
 
 ## Demo Readiness Status
 
-- Phase 5 local auditability demo ready; backend/WebSocket/hardware integration still requires Phase 6.
+- Software demo is close to ready with backend/WebSocket integration and local fallback. Final live browser rehearsal and Person 3 physical hardware rehearsal are still required before calling it fully demo-ready.
 
 ## Role Checklist
 
@@ -208,8 +235,8 @@ Ritesh-june-8th
 - [x] metrics
 - [x] page segregation
 - [x] shared local demo state across pages
-- [ ] scan page
+- [x] scan page
 - [x] movement proof shell placeholder
 - [x] movement proof panel
-- [ ] WebSocket
+- [x] WebSocket
 - [x] UI polish

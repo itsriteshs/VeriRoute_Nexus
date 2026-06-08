@@ -29,12 +29,17 @@ export default function DemoControlsPage({ demo }: DemoControlsPageProps) {
       <section className="command-grid" aria-label="Demo control modules">
         <DemoControls
           acceptScan={demo.acceptScan}
+          cloneScan={demo.cloneScan}
+          createMed104={demo.createMed104}
           failHubB={demo.failHubB}
           injectFakeScan={demo.injectFakeScan}
           overloadHubB={demo.overloadHubB}
           raiseTemperature={demo.raiseTemperature}
           resetDemo={demo.resetDemo}
+          tamperEvent={demo.tamperEvent}
+          trafficJam={demo.trafficJam}
           triggerHandshake={demo.triggerHandshake}
+          weatherRisk={demo.weatherRisk}
           backendMode={demo.backendMode}
         />
         <DemoTimeline alerts={demo.alerts} />

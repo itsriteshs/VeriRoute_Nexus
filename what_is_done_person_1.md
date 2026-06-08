@@ -16,6 +16,7 @@ Backend + Algorithms Lead
 | 2026-06-08 | Added Phase 1 backend ledger/database foundation and dual-node hardware readiness seed event | `backend/app/db/models.py`, `backend/app/db/seed_data.py`, `GET /ledger/events` |
 | 2026-06-08 | Added Phase 2 PacketFlow route scoring, route persistence, and `/route` APIs | `backend/app/engines/routing_engine.py`, `POST /route/next-hop` |
 | 2026-06-08 | Added Phase 3/4 ImmuneNet scan validation and trust scoring | `POST /scan`, `GET /trust/hubs`, `backend/app/engines/immune_engine.py` |
+| 2026-06-08 | Added AgentOps scenario endpoints, WebSocket broadcasts, hardware scan/P2P endpoints, parcel create/upsert, and frontend-compatible demo snapshot | `POST /scenario/*`, `WS /ws`, `POST /hardware/scan`, `POST /parcels`, `GET /demo/snapshot` |
 
 ## Current Working Branch
 
@@ -37,10 +38,17 @@ Backend + Algorithms Lead
 - [x] Add trust scoring updates, trust history persistence, trust board, and trust history APIs.
 - [x] Add `/scan`, `/scan/fake`, `/scan/clone`, and `/scan/tamper` demo endpoints.
 - [x] Derive metrics from ledger and trust state where available.
+- [x] Add typed WebSocket broadcasting for scan, route, trust, scenario, hardware, and demo reset events.
+- [x] Add AgentOps scenario APIs for hub failure, overload, traffic jam, weather risk, and temperature breach.
+- [x] Add hardware scan ingestion and ESP-NOW-style P2P handshake API support for Person 3 integration.
+- [x] Add `POST /parcels` create/upsert flow that logs `parcel_created`, calculates initial PacketFlow route, stores route decision, and broadcasts live events.
+- [x] Update `/demo/snapshot` with hubs, edges, parcels, latest route, events, trust board, metrics, and active disruptions for frontend live sync.
+- [x] Make cold-chain breach scenario prefer the dedicated `COLD-HUB-C` route when graph state allows it.
 
 ## In-progress Tasks
 
-- [ ] Implement Phase 5 WebSocket live broadcasting after scan/trust API integration is checked.
+- [ ] Coordinate final Person 3 physical firmware/hardware rehearsal against `/hardware/scan` and `/hardware/p2p-handshake`.
+- [ ] Migrate FastAPI startup to lifespan API to remove deprecation warnings.
 
 ## Blockers
 
@@ -75,23 +83,26 @@ Backend + Algorithms Lead
 
 - `HUB-A` and `HUB-B` are treated as future physical hardware-capable nodes through the seeded `system_ready` event `raw_payload`; no hub schema change was required.
 - `events.event_type` is stored as text, and `events.raw_payload` is JSON text, so future `p2p_handshake` ESP-NOW/BLE metadata can be logged without changing `GET /ledger/events`.
-- `/hardware/scan` and `/hardware/p2p-handshake` are intentionally not implemented in Phase 1.
+- `/hardware/scan` and `/hardware/p2p-handshake` are now implemented for backend/API compatibility; physical firmware remains Person 3 work.
 - Phase 2 route calculation selects `HUB-B` for seeded `MED-104` from `HUB-A` to `CUSTOMER-ZONE`, preserving the later demo plan where `HUB-B` can be overloaded or failed.
 - Route decisions are saved as JSON strings in the existing `route_decisions` table and parsed before returning from history APIs.
 - Phase 2 intentionally does not implement scan validation, trust decay, AgentOps, WebSockets, hardware scan, ESP-NOW, BLE parsing, fake scan, clone scan, or temperature breach.
 - Phase 3/4 valid scan returns `ACCEPTED`/`GREEN`, fake scan returns `BLOCKED`/`RED` with `geofence`, clone scan returns `BLOCKED` with `clone_scan`, tamper returns `HOLD`, and hot cold-chain scan returns `REROUTED`/`AMBER`.
 - Trust changes are visible through `/trust/hubs` and `/trust/history/{hub_id}`; ledger events and immune check rows are persisted for scan flows.
-- Phase 3/4 intentionally does not implement WebSockets, AgentOps scenario routes, hardware scan endpoints, ESP-NOW endpoint, frontend code, or AI API calls.
+- WebSockets, AgentOps scenario routes, hardware scan endpoints, and ESP-NOW-style P2P endpoint are now implemented. Physical firmware and final hardware demo wiring remain separate.
+- `POST /parcels` now supports create/upsert and returns the initial route for Person 2's create-parcel flow.
+- `/demo/snapshot` is the frontend live sync source and should remain aligned with Person 2 mappers.
 
 ## Next 3 Tasks
 
-1. Implement Phase 5 WebSocket live broadcasting.
-2. Coordinate with Person 2 on rendering immune checks, trust updates, and route decisions.
-3. Coordinate with Person 3 before adding hardware scan or ESP-NOW endpoints.
+1. Rehearse Person 3 hardware against `/hardware/scan` with and without GPS.
+2. Keep scenario payloads aligned with Person 2's active demo buttons.
+3. Polish FastAPI lifespan/deprecation warnings after demo-critical flow is frozen.
 
 ## Integration Notes
 
-- Frontend can call `POST /demo/seed`, then `GET /hubs`, `GET /edges`, `GET /parcels`, `GET /ledger/events`, and `GET /metrics` for Phase 1 demo state.
+- Frontend can call `POST /demo/seed`, then `GET /demo/snapshot` for the live dashboard state; individual endpoints remain available for detail pages.
+- Frontend can call `POST /parcels` to create/upsert `MED-104` and receive `initial_route`.
 - Frontend can call `POST /route/next-hop` after seeding to get selected next hop, full route, candidate scores, and explanation.
 - Frontend can call `POST /scan`, `/scan/fake`, `/scan/clone`, `/scan/tamper`, `/trust/hubs`, and `/trust/history/{hub_id}` for Phase 3/4 demo panels.
 
@@ -108,7 +119,7 @@ Backend + Algorithms Lead
 
 ## Demo Readiness Status
 
-- Phase 4 backend foundation ready for local smoke testing; AgentOps, WebSocket, and hardware endpoints remain future work.
+- Backend is demo-capable for software flow and API-ready for hardware integration. Final physical device firmware/rehearsal remains pending with Person 3.
 
 ## Detailed Backend Overview
 
@@ -119,8 +130,8 @@ The backend is now the source of truth for the PacketFlow ImmuneNet demo. It own
 ### App entrypoint
 
 - `backend/app/main.py` creates the FastAPI app, configures CORS for local frontend ports, initializes SQLite tables on startup, and registers routers.
-- Registered working routers now include health, demo seed/reset, hubs, edges, parcels, ledger, metrics, routing, scan, and trust.
-- Future placeholder areas still exist for hardware, scenarios, AgentOps, and WebSockets, but those were intentionally not implemented yet.
+- Registered working routers now include health, demo seed/reset/snapshot, hubs, edges, parcels, ledger, metrics, routing, scan, trust, scenarios, and hardware.
+- `WS /ws` is registered for typed live events.
 
 ### Core and database layer
 
@@ -134,14 +145,14 @@ The backend is now the source of truth for the PacketFlow ImmuneNet demo. It own
   - `immune_checks`: one row per validated scan with all six check results and failed checks as JSON.
   - `route_decisions`: persisted PacketFlow decisions with route/candidates as JSON strings.
   - `trust_history`: old/new trust, delta, reason, linked event, timestamp.
-  - `disruptions`: reserved for later AgentOps phases.
+  - `disruptions`: used by AgentOps scenario routes for hub, edge, weather, traffic, and cold-chain events.
 
 ### Phase 1 foundation
 
 - `backend/app/db/seed_data.py` seeds 7 hubs, 8 edges, demo parcel `MED-104`, and initial ledger events.
 - The seed includes a `system_ready` event marking `HUB-A` and `HUB-B` as future physical dual-node SwarmFlow hardware-capable nodes in `raw_payload`.
-- `GET /ledger/events` and `GET /ledger/parcel/{parcel_id}` return ledger rows without filtering event types, so future `p2p_handshake` events can be returned without route code changes.
-- Phase 1 deliberately did not implement `/hardware/scan`, `/hardware/p2p-handshake`, ESP-NOW, BLE parsing, WebSockets, or AgentOps.
+- `GET /ledger/events` and `GET /ledger/parcel/{parcel_id}` return ledger rows without filtering event types, so `p2p_handshake`, hardware, scenario, and trust events are visible.
+- Hardware, WebSocket, and AgentOps support were added after the Phase 1 foundation.
 
 ### Phase 2 PacketFlow routing
 
@@ -208,7 +219,7 @@ The backend is now the source of truth for the PacketFlow ImmuneNet demo. It own
 ### Schemas and API shape
 
 - Response/request schemas now live under `backend/app/schemas/`.
-- Phase 1/2/3/4 schemas include hub, edge, parcel, event, metrics, route, scan, and trust responses.
+- Schemas include hub, edge, parcel create/detail, event, metrics, route, scan, trust, scenario, and hardware responses.
 - `API_CONTRACT.md`, root `README.md`, and `backend/README.md` were updated with endpoint examples and demo curl commands.
 
 ## Issues Faced And Fixes
@@ -223,11 +234,10 @@ The backend is now the source of truth for the PacketFlow ImmuneNet demo. It own
 
 ## Current Known Gaps
 
-- WebSocket live broadcasting is not implemented yet; this should be Phase 5.
-- AgentOps scenario routes such as fail hub, overload hub, weather risk, traffic jam, and autonomous disruption handling are not implemented yet.
-- Hardware scan endpoints, ESP-NOW p2p handshake endpoints, BLE parsing, and real device bridge ingestion are still future Person 3 integration work.
+- Physical Person 3 firmware and real device bridge rehearsal are still pending.
 - No external AI explanation API is used; explanations are deterministic templates by design.
-- The backend has smoke/regression tests for Phase 1 through Phase 4, but broader end-to-end frontend integration tests are still pending.
+- Backend tests cover the software demo flow and API contracts; broader browser end-to-end automation remains a frontend/integration follow-up.
+- FastAPI startup still uses `on_event`, which works but emits deprecation warnings.
 
 ## Role Checklist
 
@@ -237,9 +247,9 @@ The backend is now the source of truth for the PacketFlow ImmuneNet demo. It own
 - [x] routing engine
 - [x] ImmuneNet 6 checks
 - [x] trust engine
-- [ ] AgentOps
-- [ ] WebSocket
-- [ ] hardware endpoint
+- [x] AgentOps
+- [x] WebSocket
+- [x] hardware endpoint
 - [x] metrics
 - [x] demo reset
 - [x] tests

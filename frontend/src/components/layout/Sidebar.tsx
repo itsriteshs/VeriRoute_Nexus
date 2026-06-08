@@ -1,8 +1,8 @@
-import { Boxes, Gauge, Network, PlaySquare, Route, ShieldCheck } from 'lucide-react';
+import { Boxes, ClipboardList, Gauge, Network, PlaySquare, Route, ShieldCheck } from 'lucide-react';
 import { relayStatus, sidebarItems } from '../../data/mockData';
 import StatusBadge from '../cards/StatusBadge';
 
-const icons = [Gauge, Network, Boxes, ShieldCheck, Route, PlaySquare];
+const icons = [Gauge, Network, Boxes, ClipboardList, ShieldCheck, Route, PlaySquare];
 
 type SidebarProps = {
   currentPath: string;
@@ -35,7 +35,11 @@ export default function Sidebar({ currentPath, onNavigate }: SidebarProps) {
             const Icon = icons[index];
             return (
               <a
-                className={`sidebar__item ${currentPath === item.path ? 'is-active' : ''}`}
+                className={`sidebar__item ${
+                  currentPath === item.path || (item.path !== '/dashboard' && currentPath.startsWith(`${item.path}/`))
+                    ? 'is-active'
+                    : ''
+                }`}
                 href={item.path}
                 key={item.path}
                 onClick={(event) => {

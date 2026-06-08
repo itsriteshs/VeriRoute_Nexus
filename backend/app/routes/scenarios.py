@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 from app.core import constants
 from app.core.websocket_manager import safe_broadcast
 from app.db.database import get_db
-from app.db.models import Hub, Edge, Parcel
+from app.db.models import Hub, Edge, Parcel, RouteDecision
+from app.engines.graph_engine import find_shortest_route_by_eta
 from app.engines.agentops_engine import (
     get_latest_route_for_parcel,
     log_disruption,
@@ -17,6 +18,7 @@ from app.engines.agentops_engine import (
 from app.engines.routing_engine import select_next_hop
 from app.engines.explanation_engine import generate_agentops_reason
 from app.engines.metrics_engine import get_starter_metrics
+from app.utils.time_utils import utc_now_iso
 from app.schemas.scenario_schema import (
     FailHubRequest,
     OverloadHubRequest,
@@ -27,6 +29,52 @@ from app.schemas.scenario_schema import (
 )
 
 router = APIRouter(prefix="/scenario", tags=["scenarios"])
+
+
+def _find_cold_chain_route(db: Session, start_hub: str, destination_hub: str) -> list[str]:
+    cold_hubs = (
+        db.query(Hub)
+        .filter(Hub.cold_chain == True, Hub.status != "failed", Hub.trust_score >= 0.40)  # noqa: E712
+        .order_by(Hub.id)
+        .all()
+    )
+    best_route: list[str] = []
+    best_eta = float("inf")
+    for cold_hub in cold_hubs:
+        first_leg, first_eta = find_shortest_route_by_eta(db, start_hub, cold_hub.id)
+        second_leg, second_eta = find_shortest_route_by_eta(db, cold_hub.id, destination_hub)
+        if not first_leg or not second_leg:
+            continue
+        route = [*first_leg, *second_leg[1:]]
+        eta = first_eta + second_eta
+        dedicated_penalty = 0.0 if "COLD" in cold_hub.id else 10_000.0
+        score = eta + dedicated_penalty
+        if route and cold_hub.id in route and score < best_eta:
+            best_route = route
+            best_eta = float(score)
+    return best_route
+
+
+def _save_forced_route_decision(
+    db: Session,
+    parcel_id: str,
+    current_hub: str,
+    full_route: list[str],
+    reason: str,
+) -> None:
+    db.add(
+        RouteDecision(
+            parcel_id=parcel_id,
+            current_hub=current_hub,
+            selected_next_hop=full_route[1] if len(full_route) > 1 else None,
+            full_route=json.dumps(full_route),
+            candidate_scores=json.dumps([]),
+            final_score=None,
+            reason=reason,
+            created_at=utc_now_iso(),
+        )
+    )
+    db.commit()
 
 
 @router.post("/fail-hub", response_model=ScenarioResponse)
@@ -451,7 +499,6 @@ async def temp_breach(payload: TempBreachRequest, db: Session = Depends(get_db))
 
     parcel.current_temperature = payload.temperature_c
     parcel.status = "rerouted"
-    parcel.current_hub = payload.hub_id
     db.commit()
 
     log_disruption(
@@ -473,8 +520,27 @@ async def temp_breach(payload: TempBreachRequest, db: Session = Depends(get_db))
         reason=f"Cold-chain risk detected. {payload.parcel_id} exceeded {parcel.temperature_limit}C.",
     )
 
-    new_route_res = select_next_hop(db, payload.parcel_id, parcel.current_hub, parcel.destination_hub)
-    new_route = new_route_res.get("full_route") or []
+    route_origin = parcel.current_hub
+    if not db.get(Hub, route_origin) or db.get(Hub, route_origin).status == "failed":
+        route_origin = payload.hub_id
+
+    cold_route = _find_cold_chain_route(db, route_origin, parcel.destination_hub)
+    if cold_route:
+        new_route = cold_route
+        selected_next_hop = cold_route[1] if len(cold_route) > 1 else None
+        forced_reason = f"Cold-chain risk detected. {payload.parcel_id} exceeded {parcel.temperature_limit}C, so PacketFlow forced a route through COLD-HUB-C."
+        _save_forced_route_decision(db, payload.parcel_id, route_origin, new_route, forced_reason)
+        new_route_res = {
+            "parcel_id": payload.parcel_id,
+            "current_hub": route_origin,
+            "selected_next_hop": selected_next_hop,
+            "full_route": new_route,
+            "candidate_scores": [],
+            "reason": forced_reason,
+        }
+    else:
+        new_route_res = select_next_hop(db, payload.parcel_id, route_origin, parcel.destination_hub)
+        new_route = new_route_res.get("full_route") or []
 
     await safe_broadcast(
         constants.TEMPERATURE_BREACH,
@@ -489,7 +555,10 @@ async def temp_breach(payload: TempBreachRequest, db: Session = Depends(get_db))
     )
 
     if not new_route:
-        reason = "No valid route available after disruption."
+        reason = (
+            "Cold-chain breach detected, but no valid cold-chain-safe route is available "
+            f"from {route_origin} to {parcel.destination_hub} with current hub/edge status."
+        )
         await safe_broadcast(constants.METRICS_UPDATED, get_starter_metrics(db))
         return {
             "decision": "REROUTED",
@@ -503,7 +572,10 @@ async def temp_breach(payload: TempBreachRequest, db: Session = Depends(get_db))
             "reason": reason,
         }
 
-    reason = generate_agentops_reason("temperature_breach", payload.hub_id, old_route, new_route, payload.parcel_id)
+    if "COLD-HUB-C" in new_route:
+        reason = f"Cold-chain risk detected. {payload.parcel_id} exceeded {parcel.temperature_limit}C, so PacketFlow rerouted it through COLD-HUB-C."
+    else:
+        reason = generate_agentops_reason("temperature_breach", payload.hub_id, old_route, new_route, payload.parcel_id)
 
     save_agentops_event(
         db,
@@ -520,6 +592,7 @@ async def temp_breach(payload: TempBreachRequest, db: Session = Depends(get_db))
                 "new_route": new_route,
                 "trigger": "temperature_breach",
                 "agentops": {"detected": True, "action": "REPLAN_ROUTE"},
+                "cold_chain_forced": "COLD-HUB-C" in new_route,
             }
         ),
     )

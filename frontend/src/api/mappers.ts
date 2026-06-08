@@ -16,7 +16,6 @@ import type {
   MovementProof,
   ImpactMetrics,
 } from '../types/packetflow';
-import { get_trust_status } from './endpoints'; // Wait, get_trust_status was in trust_engine.py, let's define it locally or import
 
 export function getTrustStatus(score: number): 'trusted' | 'watch' | 'risky' | 'quarantined' {
   if (score >= 0.80) return 'trusted';

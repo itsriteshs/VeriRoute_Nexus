@@ -5,11 +5,13 @@ import json
 from sqlalchemy.orm import Session
 
 from app.core import constants
-from app.db.models import Hub, Edge, Parcel, Event, RouteDecision
+from app.db.models import Disruption, Hub, Edge, Parcel, Event, RouteDecision
 from app.db.seed_data import seed_demo_data
 from app.engines.metrics_engine import get_starter_metrics
 from app.engines.trust_engine import get_trust_status
 from app.routes.ledger import serialize_event
+from app.routes.parcels import serialize_parcel
+from app.routes.routing import serialize_route_decision
 
 
 def reset_demo_state(db: Session) -> dict:
@@ -27,21 +29,9 @@ def get_demo_snapshot(db: Session) -> dict:
     parcel = db.get(Parcel, "MED-104")
     parcel_dict = {}
     if parcel:
-        parcel_dict = {
-            "id": parcel.id,
-            "parcel_type": parcel.parcel_type,
-            "source_hub": parcel.source_hub,
-            "destination_hub": parcel.destination_hub,
-            "current_hub": parcel.current_hub,
-            "previous_hub": parcel.previous_hub,
-            "priority": parcel.priority,
-            "sla_minutes": parcel.sla_minutes,
-            "temperature_limit": parcel.temperature_limit,
-            "current_temperature": parcel.current_temperature,
-            "carrier_type": parcel.carrier_type,
-            "status": parcel.status,
-            "trust_state": parcel.trust_state,
-        }
+        parcel_dict = serialize_parcel(parcel)
+
+    parcels_list = [serialize_parcel(item) for item in db.query(Parcel).order_by(Parcel.id).all()]
 
     hubs = db.query(Hub).order_by(Hub.id).all()
     hubs_list = [
@@ -61,6 +51,24 @@ def get_demo_snapshot(db: Session) -> dict:
         for hub in hubs
     ]
 
+    edges = db.query(Edge).order_by(Edge.from_hub, Edge.to_hub).all()
+    edges_list = [
+        {
+            "id": edge.id,
+            "from_hub": edge.from_hub,
+            "to_hub": edge.to_hub,
+            "distance_km": edge.distance_km,
+            "eta_min": edge.eta_min,
+            "traffic_risk": edge.traffic_risk,
+            "weather_risk": edge.weather_risk,
+            "cost_score": edge.cost_score,
+            "emission_score": edge.emission_score,
+            "allowed_carriers": edge.allowed_carriers,
+            "status": edge.status,
+        }
+        for edge in edges
+    ]
+
     decision = (
         db.query(RouteDecision)
         .filter(RouteDecision.parcel_id == "MED-104")
@@ -68,13 +76,20 @@ def get_demo_snapshot(db: Session) -> dict:
         .first()
     )
     latest_route_dict = {}
+    if decision is None and parcel:
+        from app.engines.routing_engine import select_next_hop
+
+        select_next_hop(db, parcel.id, parcel.current_hub, parcel.destination_hub)
+        decision = (
+            db.query(RouteDecision)
+            .filter(RouteDecision.parcel_id == "MED-104")
+            .order_by(RouteDecision.id.desc())
+            .first()
+        )
     if decision:
-        latest_route_dict = {
-            "parcel_id": "MED-104",
-            "current_route": json.loads(decision.full_route) if decision.full_route else [],
-            "selected_next_hop": decision.selected_next_hop,
-            "latest_reason": decision.reason,
-        }
+        latest_route_dict = serialize_route_decision(decision)
+        latest_route_dict["current_route"] = latest_route_dict["full_route"]
+        latest_route_dict["latest_reason"] = latest_route_dict["reason"]
 
     trust_board_list = [
         {
@@ -96,13 +111,37 @@ def get_demo_snapshot(db: Session) -> dict:
     )
     events_list = [serialize_event(e) for e in recent_events]
 
+    disruptions = (
+        db.query(Disruption)
+        .order_by(Disruption.id.desc())
+        .limit(20)
+        .all()
+    )
+    disruptions_list = [
+        {
+            "id": disruption.id,
+            "disruption_type": disruption.disruption_type,
+            "target_id": disruption.target_id,
+            "severity": disruption.severity,
+            "status": disruption.status,
+            "reason": disruption.reason,
+            "created_at": disruption.created_at,
+            "resolved_at": disruption.resolved_at,
+        }
+        for disruption in disruptions
+    ]
+
     return {
         "parcel": parcel_dict,
+        "parcels": parcels_list,
         "hubs": hubs_list,
+        "edges": edges_list,
         "latest_route": latest_route_dict,
         "trust_board": trust_board_list,
         "metrics": metrics,
+        "latest_events": events_list,
         "recent_events": events_list,
+        "active_disruptions": disruptions_list,
     }
 
 

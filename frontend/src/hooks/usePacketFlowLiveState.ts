@@ -26,6 +26,11 @@ export type LiveDemoState = DemoState & {
   websocketStatus: SocketStatus;
   lastEvent: string;
   syncBackend: () => Promise<void>;
+  createMed104: () => Promise<void>;
+  trafficJam: () => Promise<void>;
+  weatherRisk: () => Promise<void>;
+  cloneScan: () => Promise<void>;
+  tamperEvent: () => Promise<void>;
 };
 
 export function usePacketFlowLiveState(): LiveDemoState {
@@ -215,6 +220,7 @@ export function usePacketFlowLiveState(): LiveDemoState {
         carrier_type: 'van',
         tamper: false,
       });
+      await syncBackend();
       showToast('Scan authorized on backend.');
     } catch (err) {
       console.error(err);
@@ -238,6 +244,7 @@ export function usePacketFlowLiveState(): LiveDemoState {
         eta_sec: 30,
         carrier_type: 'van',
       });
+      await syncBackend();
       showToast('P2P handshake logged.');
     } catch (err) {
       console.error(err);
@@ -257,6 +264,7 @@ export function usePacketFlowLiveState(): LiveDemoState {
         claimed_hub: 'HUB-C',
         fake_gps: { lat: 11.1000, lng: 77.1000, accuracy_m: 20 },
       });
+      await syncBackend();
       showToast('Fake scan rejected.');
     } catch (err) {
       console.error(err);
@@ -275,6 +283,7 @@ export function usePacketFlowLiveState(): LiveDemoState {
         hub_id: 'HUB-B',
         parcel_id: 'MED-104',
       });
+      await syncBackend();
       showToast('HUB-B failed disruption logged.');
     } catch (err) {
       console.error(err);
@@ -294,6 +303,7 @@ export function usePacketFlowLiveState(): LiveDemoState {
         parcel_id: 'MED-104',
         congestion: 0.95,
       });
+      await syncBackend();
       showToast('HUB-B overload disruption logged.');
     } catch (err) {
       console.error(err);
@@ -310,13 +320,121 @@ export function usePacketFlowLiveState(): LiveDemoState {
     try {
       await apiPost(endpoints.tempBreach, {
         parcel_id: 'MED-104',
-        hub_id: 'HUB-B',
+        hub_id: 'HUB-A',
         temperature_c: 29.2,
       });
+      await syncBackend();
       showToast('Temperature breach logged.');
     } catch (err) {
       console.error(err);
       showToast('Failed to breach temp.');
+    }
+  };
+
+  const createMed104 = async () => {
+    if (backendMode === 'mock') {
+      showToast('MED-104 is already loaded in local fallback mode.');
+      setLastEvent('local_create_parcel');
+      return;
+    }
+    try {
+      await apiPost(endpoints.parcels, {
+        id: 'MED-104',
+        parcel_type: 'medicine',
+        source_hub: 'HUB-A',
+        destination_hub: 'CUSTOMER-ZONE',
+        priority: 'high',
+        sla_minutes: 45,
+        temperature_limit: 25.0,
+        carrier_type: 'van',
+      });
+      await syncBackend();
+      showToast('MED-104 created and routed.');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to create MED-104.');
+    }
+  };
+
+  const trafficJam = async () => {
+    if (backendMode === 'mock') {
+      showToast('Traffic jam requires live backend mode.');
+      setLastEvent('local_traffic_jam');
+      return;
+    }
+    try {
+      await apiPost(endpoints.trafficJam, {
+        parcel_id: 'MED-104',
+        from_hub: 'HUB-A',
+        to_hub: 'HUB-B',
+        traffic_risk: 0.85,
+      });
+      await syncBackend();
+      showToast('Traffic disruption logged.');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to trigger traffic jam.');
+    }
+  };
+
+  const weatherRisk = async () => {
+    if (backendMode === 'mock') {
+      showToast('Weather risk requires live backend mode.');
+      setLastEvent('local_weather_risk');
+      return;
+    }
+    try {
+      await apiPost(endpoints.weatherRisk, {
+        parcel_id: 'MED-104',
+        from_hub: 'HUB-A',
+        to_hub: 'HUB-B',
+        weather_risk: 0.9,
+      });
+      await syncBackend();
+      showToast('Weather disruption logged.');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to trigger weather risk.');
+    }
+  };
+
+  const cloneScan = async () => {
+    if (backendMode === 'mock') {
+      showToast('Clone scan requires live backend mode.');
+      setLastEvent('local_clone_scan');
+      return;
+    }
+    try {
+      await apiPost(endpoints.cloneScan, {
+        parcel_id: 'MED-104',
+        first_hub: 'HUB-B',
+        second_hub: 'HUB-D',
+      });
+      await syncBackend();
+      showToast('Clone scan blocked.');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to trigger clone scan.');
+    }
+  };
+
+  const tamperEvent = async () => {
+    if (backendMode === 'mock') {
+      showToast('Tamper event requires live backend mode.');
+      setLastEvent('local_tamper_event');
+      return;
+    }
+    try {
+      await apiPost(endpoints.tamperScan, {
+        parcel_id: 'MED-104',
+        hub_id: 'HUB-C',
+        tamper: true,
+      });
+      await syncBackend();
+      showToast('Tamper event held.');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to trigger tamper event.');
     }
   };
 
@@ -343,6 +461,11 @@ export function usePacketFlowLiveState(): LiveDemoState {
       websocketStatus: wsStatus,
       lastEvent,
       syncBackend,
+      createMed104,
+      trafficJam,
+      weatherRisk,
+      cloneScan,
+      tamperEvent,
     } as LiveDemoState;
   }
 
@@ -375,5 +498,10 @@ export function usePacketFlowLiveState(): LiveDemoState {
     websocketStatus: wsStatus,
     lastEvent,
     syncBackend,
+    createMed104,
+    trafficJam,
+    weatherRisk,
+    cloneScan,
+    tamperEvent,
   } as LiveDemoState;
 }
