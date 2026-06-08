@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.websocket_manager import safe_broadcast
 from app.db.database import get_db
 from app.db.models import Parcel, RouteDecision
 from app.engines.routing_engine import select_next_hop
@@ -21,8 +22,10 @@ router = APIRouter(prefix="/route", tags=["route"])
 
 def _http_error(error: ValueError) -> HTTPException:
     message = str(error)
-    if message in {"Parcel not found", "Current hub not found", "Destination hub not found"}:
-        return HTTPException(status_code=404, detail=message)
+    if message in {"Parcel not found"}:
+        return HTTPException(status_code=404, detail="Parcel not found")
+    if message in {"Current hub not found", "Destination hub not found", "Hub not found"}:
+        return HTTPException(status_code=404, detail="Hub not found")
     return HTTPException(status_code=400, detail=message)
 
 
@@ -50,9 +53,18 @@ def serialize_route_decision(decision: RouteDecision) -> dict[str, object]:
 
 
 @router.post("/next-hop", response_model=RouteDecisionResponse)
-def next_hop(payload: RouteNextHopRequest, db: Session = Depends(get_db)):
+async def next_hop(payload: RouteNextHopRequest, db: Session = Depends(get_db)):
     try:
-        return select_next_hop(db, payload.parcel_id, payload.current_hub, payload.destination_hub)
+        result = select_next_hop(db, payload.parcel_id, payload.current_hub, payload.destination_hub)
+        await safe_broadcast("route_decision", {
+            "parcel_id": result["parcel_id"],
+            "current_hub": result["current_hub"],
+            "selected_next_hop": result["selected_next_hop"],
+            "full_route": result["full_route"],
+            "candidate_scores": result["candidate_scores"],
+            "reason": result["reason"]
+        })
+        return result
     except ValueError as error:
         raise _http_error(error) from error
 

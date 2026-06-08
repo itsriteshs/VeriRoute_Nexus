@@ -66,3 +66,21 @@ def generate_scan_reason(parcel, hub, decision: str, failed_checks: list[str], c
     if decision == "WARNING":
         return "Movement warning because one or more ImmuneNet checks could not fully verify the scan."
     return "Scan processed by ImmuneNet."
+
+
+def generate_agentops_reason(disruption_type: str, target: str, old_route: list[str], new_route: list[str], parcel_id: str) -> str:
+    if not new_route:
+        return "No valid route available after disruption."
+
+    if disruption_type == "hub_failed":
+        return f"{target} failed, so AgentOps triggered PacketFlow to avoid the failed hub and preserve {parcel_id}'s SLA."
+    elif disruption_type == "hub_overloaded":
+        next_hop = new_route[1] if len(new_route) > 1 else "destination"
+        return f"{target} is overloaded, so PacketFlow selected {next_hop} as the safer next hop."
+    elif disruption_type == "traffic_jam":
+        return f"Traffic risk increased on {target}, so AgentOps triggered rerouting through a lower-risk path."
+    elif disruption_type == "weather_risk":
+        return f"Weather risk was detected on the current route, so AgentOps recalculated a safer route."
+    elif disruption_type == "temperature_breach":
+        return f"Cold-chain risk detected. {parcel_id} exceeded 25°C, so PacketFlow rerouted it through a cold-chain-capable hub."
+    return f"Disruption {disruption_type} detected, so route was recalculated."

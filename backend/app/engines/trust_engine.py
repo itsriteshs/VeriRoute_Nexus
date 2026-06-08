@@ -9,7 +9,7 @@ from app.utils.time_utils import utc_now_iso
 
 
 def clamp_score(value: float) -> float:
-    return max(0.0, min(1.0, float(value)))
+    return round(max(0.0, min(1.0, float(value))), 2)
 
 
 def get_trust_status(score: float) -> str:
@@ -68,6 +68,7 @@ def update_hub_trust(
     failed_checks: list[str],
     reason: str,
     event_id: int | None,
+    esp_now_trust_delta: float | None = None,
 ) -> dict[str, float | str]:
     hub = db.get(Hub, hub_id)
     if hub is None:
@@ -75,6 +76,8 @@ def update_hub_trust(
 
     old_score = float(hub.trust_score)
     delta = calculate_trust_delta(decision, failed_checks)
+    if esp_now_trust_delta is not None:
+        delta += float(esp_now_trust_delta)
     new_score = clamp_score(old_score + delta)
     now = utc_now_iso()
 

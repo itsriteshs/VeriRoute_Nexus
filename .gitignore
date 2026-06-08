@@ -10,3 +10,7 @@ build/
 coverage/
 .pytest_cache/
 .vite/
+packetflow.db
+.agents/
+skills-lock.json
+person1_zuup.txt

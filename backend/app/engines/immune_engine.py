@@ -294,7 +294,15 @@ def validate_scan(db: Session, scan_request: ScanRequest) -> dict[str, Any]:
     )
     db.commit()
 
-    trust_update = update_hub_trust(db, hub.id, decision, failed_checks, reason, scan_event.id)
+    trust_update = update_hub_trust(
+        db,
+        hub.id,
+        decision,
+        failed_checks,
+        reason,
+        scan_event.id,
+        esp_now_trust_delta=getattr(scan_request, "esp_now_trust_delta", None),
+    )
     route_decision = None
 
     if decision == constants.DECISION_ACCEPTED:

@@ -25,6 +25,11 @@ class EventsResponse(BaseModel):
     events: list[EventOut]
 
 
+from typing import Any
+
 class ParcelEventsResponse(BaseModel):
     parcel_id: str
     events: list[EventOut]
+    latest_route: dict[str, Any] | None = None
+    trust_events: list[dict[str, Any]] | None = None
+    immune_checks: list[dict[str, Any]] | None = None

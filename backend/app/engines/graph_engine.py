@@ -54,6 +54,14 @@ def get_active_edge(db: Session, from_hub: str, to_hub: str) -> Edge | None:
     )
 
 
+def get_effective_eta(edge: Edge) -> float:
+    traffic_risk = float(edge.traffic_risk or 0.0)
+    weather_risk = float(edge.weather_risk or 0.0)
+    eff_traffic = traffic_risk if traffic_risk > 0.30 else 0.0
+    eff_weather = weather_risk if weather_risk > 0.30 else 0.0
+    return float(edge.eta_min) * (1.0 + eff_traffic * 0.75 + eff_weather * 0.50)
+
+
 def find_shortest_route_by_eta(db: Session, start_hub: str, destination_hub: str) -> tuple[list[str], float]:
     if not is_usable_hub(db.get(Hub, start_hub)) or not is_usable_hub(db.get(Hub, destination_hub)):
         return [], HIGH_ETA
@@ -72,7 +80,7 @@ def find_shortest_route_by_eta(db: Session, start_hub: str, destination_hub: str
             edge = get_active_edge(db, hub_id, neighbor.id)
             if edge is None:
                 continue
-            next_eta = eta_so_far + float(edge.eta_min)
+            next_eta = eta_so_far + get_effective_eta(edge)
             if next_eta < best_eta.get(neighbor.id, HIGH_ETA):
                 best_eta[neighbor.id] = next_eta
                 heappush(queue, (next_eta, neighbor.id, [*path, neighbor.id]))
@@ -94,4 +102,4 @@ def find_route_via_candidate(
     if not tail_route:
         return [], HIGH_ETA
 
-    return [current_hub, *tail_route], float(first_edge.eta_min) + tail_eta
+    return [current_hub, *tail_route], get_effective_eta(first_edge) + tail_eta

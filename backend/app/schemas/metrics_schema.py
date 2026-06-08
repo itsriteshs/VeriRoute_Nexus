@@ -13,3 +13,7 @@ class MetricsResponse(BaseModel):
     fake_scans_blocked: int
     trust_quarantines: int
     fallback_reliability: bool
+    hardware_scans: int
+    p2p_handshakes: int
+    accepted_movements: int
+    ledger_events: int

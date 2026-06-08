@@ -44,7 +44,10 @@ def calculate_sla_risk(total_eta_min: float, sla_minutes: int) -> float:
 
 
 def calculate_congestion_risk(candidate_hub: Hub) -> float:
-    return clamp(candidate_hub.congestion)
+    base = float(candidate_hub.congestion)
+    if candidate_hub.status == "overloaded":
+        return max(0.90, clamp(base))
+    return clamp(base)
 
 
 def calculate_trust_risk(candidate_hub: Hub) -> float:
@@ -64,7 +67,11 @@ def calculate_condition_risk(db: Session, parcel: Parcel, route: list[str]) -> f
         return 0.35
     if parcel.current_temperature <= parcel.temperature_limit:
         return 0.10 if contains_cold_chain else 0.35
-    return 0.20 if contains_cold_chain else 0.90
+    
+    has_dedicated_cold = any("COLD" in hub_id for hub_id in route_after_current)
+    if has_dedicated_cold:
+        return 0.05
+    return 0.70 if contains_cold_chain else 0.90
 
 
 def calculate_cost_emission_score(edge: Edge) -> float:
@@ -102,6 +109,8 @@ def score_candidate(
     congestion_risk = calculate_congestion_risk(candidate_hub)
     trust_risk = calculate_trust_risk(candidate_hub)
     condition_risk = calculate_condition_risk(db, parcel, route)
+    if edge.weather_risk >= 0.70 and parcel.parcel_type in SENSITIVE_PARCEL_TYPES:
+        condition_risk = clamp(condition_risk + 0.25)
     cost_emission_score = calculate_cost_emission_score(edge)
     final_score = (
         SLA_WEIGHT * sla_risk

@@ -121,4 +121,68 @@ curl http://localhost:8000/ledger/events
 curl http://localhost:8000/metrics
 ```
 
-Expected demo behavior: valid scan returns `ACCEPTED` and `GREEN`; fake scan returns `BLOCKED` and `RED`; clone scan returns `BLOCKED` with `clone_scan`; tamper scan returns `HOLD`; hot cold-chain scan returns `REROUTED` and `AMBER`. Phase 5 should add WebSocket live broadcasting next.
+Expected demo behavior: valid scan returns `ACCEPTED` and `GREEN`; fake scan returns `BLOCKED` and `RED`; clone scan returns `BLOCKED` with `clone_scan`; tamper scan returns `HOLD`; hot cold-chain scan returns `REROUTED` and `AMBER`.
+
+## Phase 5 + 6: WebSocket Live Broadcasting & AgentOps Scenario Engine
+
+FastAPI WebSocket connection manages live real-time events on `ws://localhost:8000/ws`.
+
+### WebSocket Message Envelope Format
+```json
+{
+  "type": "event_type_here",
+  "timestamp": "2026-06-08T10:42:00Z",
+  "payload": {}
+}
+```
+
+### Scenario APIs
+AgentOps handles autonomous routing replans and logs disruptions under five simulated disaster scenarios:
+
+* **Fail Hub** (`POST /scenario/fail-hub`): Avoids the failed hub.
+* **Overload Hub** (`POST /scenario/overload-hub`): Shifts candidate routing risk away from the overloaded hub.
+* **Traffic Jam** (`POST /scenario/traffic-jam`): Increases routing ETA for affected edges.
+* **Weather Risk** (`POST /scenario/weather-risk`): Increases edge weather risk and condition risk for sensitive parcels.
+* **Temperature Breach** (`POST /scenario/temp-breach`): Triggers temperature breach alerts and reroutes parcels to cold-chain hubs.
+
+### Curl Commands
+```bash
+# Overload HUB-B
+curl -X POST http://localhost:8000/scenario/overload-hub \
+  -H "Content-Type: application/json" \
+  -d '{"hub_id":"HUB-B","parcel_id":"MED-104","congestion":0.95}'
+
+# Fail HUB-B
+curl -X POST http://localhost:8000/scenario/fail-hub \
+  -H "Content-Type: application/json" \
+  -d '{"hub_id":"HUB-B","parcel_id":"MED-104"}'
+
+# Traffic jam HUB-B -> HUB-E
+curl -X POST http://localhost:8000/scenario/traffic-jam \
+  -H "Content-Type: application/json" \
+  -d '{"from_hub":"HUB-B","to_hub":"HUB-E","parcel_id":"MED-104","traffic_risk":0.95}'
+
+# Weather risk HUB-B -> HUB-E
+curl -X POST http://localhost:8000/scenario/weather-risk \
+  -H "Content-Type: application/json" \
+  -d '{"from_hub":"HUB-B","to_hub":"HUB-E","parcel_id":"MED-104","weather_risk":0.90}'
+
+# Temperature breach MED-104
+curl -X POST http://localhost:8000/scenario/temp-breach \
+  -H "Content-Type: application/json" \
+  -d '{"parcel_id":"MED-104","hub_id":"HUB-A","temperature_c":29.2}'
+```
+
+### Python WebSocket Tester
+Use the following snippet to subscribe to the live stream:
+```python
+import asyncio, websockets, json
+async def main():
+    async with websockets.connect("ws://localhost:8000/ws") as ws:
+        print("Connected to VeriRoute WS")
+        while True:
+            print(json.dumps(json.loads(await ws.recv()), indent=2))
+asyncio.run(main())
+```
+
+Phase 7 will implement hardware scan integration next.
