@@ -21,7 +21,14 @@ from app.routes import (
     trust,
 )
 
-app = FastAPI(title="PacketFlow ImmuneNet Backend", version="1.0")
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+app = FastAPI(title="PacketFlow ImmuneNet Backend", version="1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,11 +47,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def startup() -> None:
-    init_db()
 
 
 app.include_router(health.router)

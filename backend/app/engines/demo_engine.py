@@ -90,6 +90,20 @@ def get_demo_snapshot(db: Session) -> dict:
         latest_route_dict = serialize_route_decision(decision)
         latest_route_dict["current_route"] = latest_route_dict["full_route"]
         latest_route_dict["latest_reason"] = latest_route_dict["reason"]
+    else:
+        latest_route_dict = {
+            "id": 0,
+            "parcel_id": "MED-104",
+            "current_hub": "HUB-A",
+            "selected_next_hop": "HUB-B",
+            "full_route": ["HUB-A", "HUB-B", "HUB-E", "CUSTOMER-ZONE"],
+            "candidate_scores": [],
+            "final_score": 0.27,
+            "reason": "Central Smart Hub A initialized with active next-hop relay routing to HUB-B.",
+            "created_at": utc_now_iso(),
+            "current_route": ["HUB-A", "HUB-B", "HUB-E", "CUSTOMER-ZONE"],
+            "latest_reason": "Central Smart Hub A initialized with active next-hop relay routing to HUB-B."
+        }
 
     trust_board_list = [
         {

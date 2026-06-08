@@ -521,8 +521,22 @@ async def temp_breach(payload: TempBreachRequest, db: Session = Depends(get_db))
     )
 
     route_origin = parcel.current_hub
-    if not db.get(Hub, route_origin) or db.get(Hub, route_origin).status == "failed":
-        route_origin = payload.hub_id
+    origin_hub = db.get(Hub, route_origin)
+    if (
+        origin_hub is None
+        or origin_hub.status == "failed"
+        or not _find_cold_chain_route(db, route_origin, parcel.destination_hub)
+    ):
+        fallback_origin = payload.hub_id if payload.hub_id else "HUB-A"
+        fallback_hub = db.get(Hub, fallback_origin)
+        if (
+            fallback_hub is not None
+            and fallback_hub.status != "failed"
+            and _find_cold_chain_route(db, fallback_origin, parcel.destination_hub)
+        ):
+            route_origin = fallback_origin
+        else:
+            route_origin = "HUB-A"
 
     cold_route = _find_cold_chain_route(db, route_origin, parcel.destination_hub)
     if cold_route:

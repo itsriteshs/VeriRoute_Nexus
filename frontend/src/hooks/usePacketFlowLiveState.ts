@@ -81,7 +81,10 @@ export function usePacketFlowLiveState(): LiveDemoState {
 
         if (snapshot.latest_route?.candidate_scores) {
           try {
-            setCandidateScores(mapBackendCandidateScores(JSON.parse(snapshot.latest_route.candidate_scores)));
+            const rawScores = typeof snapshot.latest_route.candidate_scores === 'string'
+              ? JSON.parse(snapshot.latest_route.candidate_scores)
+              : snapshot.latest_route.candidate_scores;
+            setCandidateScores(mapBackendCandidateScores(rawScores));
           } catch {
             setCandidateScores(mapBackendCandidateScores([]));
           }

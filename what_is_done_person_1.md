@@ -44,11 +44,12 @@ Backend + Algorithms Lead
 - [x] Add `POST /parcels` create/upsert flow that logs `parcel_created`, calculates initial PacketFlow route, stores route decision, and broadcasts live events.
 - [x] Update `/demo/snapshot` with hubs, edges, parcels, latest route, events, trust board, metrics, and active disruptions for frontend live sync.
 - [x] Make cold-chain breach scenario prefer the dedicated `COLD-HUB-C` route when graph state allows it.
+- [x] Migrate FastAPI startup to lifespan API to remove deprecation warnings.
+- [x] Robustly handle temperature breach scenario to fall back to payload hub when current hub has no path to cold chain.
 
 ## In-progress Tasks
 
 - [ ] Coordinate final Person 3 physical firmware/hardware rehearsal against `/hardware/scan` and `/hardware/p2p-handshake`.
-- [ ] Migrate FastAPI startup to lifespan API to remove deprecation warnings.
 
 ## Blockers
 

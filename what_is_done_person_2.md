@@ -35,11 +35,12 @@ Ritesh-june-8th
 - [x] Wired `/ledger`, `/parcels/:parcelId`, and `/scan/:hubId` into the active TS route system.
 - [x] Added scan page with browser GPS, valid/fake coordinate fallbacks, backend `POST /scan`, decision, LED, and reason display.
 - [x] Added `npm run typecheck` and TypeScript config for active TS/TSX frontend files.
+- [x] Cleaned up and removed all old JSX placeholder files once TS routes were frozen.
+- [x] Validated production build with zero compilation or type-check errors.
 
 ## In-progress Tasks
 
 - [ ] Final browser rehearsal with live backend and physical Person 3 hardware.
-- [ ] Replace or remove remaining old JSX placeholder files once the active TS routes are frozen.
 
 ## Blockers
 
