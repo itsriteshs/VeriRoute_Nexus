@@ -1,0 +1,27 @@
+:root {
+  --aether-primary: #b1e09d;
+  --aether-secondary: #061c15;
+  --aether-accent: #82a89c;
+  --aether-background: #b1e09d;
+  --aether-shell: #eff4ef;
+  --aether-surface: #ffffff;
+  --aether-surface-muted: #f6faf7;
+  --aether-surface-dark: #061c15;
+  --aether-text-primary: #111827;
+  --aether-text-secondary: #4b5563;
+  --aether-text-muted: #8a9a94;
+  --aether-border: #d1dedc;
+  --aether-success: #2f8f5b;
+  --aether-warning: #c8a43d;
+  --aether-danger: #dc4a45;
+  --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --shadow-shell: 0 24px 80px rgba(6, 28, 21, 0.1);
+  --shadow-card: 0 12px 36px rgba(6, 28, 21, 0.06);
+  --shadow-hover: 0 18px 48px rgba(6, 28, 21, 0.1);
+  --radius-shell: 32px;
+  --radius-card: 30px;
+  --radius-control: 48px;
+  --radius-pill: 9999px;
+}
