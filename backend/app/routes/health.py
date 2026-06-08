@@ -8,4 +8,4 @@ router = APIRouter()
 
 @router.get("/health")
 def health():
-    return {"status": "ok", "service": "veriroute-nexus-backend"}
+    return {"status": "ok", "service": "PacketFlow ImmuneNet Backend", "version": "1.0"}
