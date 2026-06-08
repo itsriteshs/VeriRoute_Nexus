@@ -29,6 +29,8 @@ class ScanRequest(BaseModel):
     esp_now_prior_acceptance: bool | None = None
     esp_now_prior_hub: str | None = None
     esp_now_trust_delta: float | None = None
+    totp_token: str | None = None
+    witness_node_ids: list[str] | None = None
 
 
 class FakeScanRequest(BaseModel):
@@ -56,6 +58,9 @@ class ImmuneChecksResponse(BaseModel):
     clone_scan: str
     cold_chain: str
     tamper: str
+    zero_trust_handshake: str = "PASS"
+    mesh_consensus: str = "PASS"
+    statistical_anomaly: str = "PASS"
 
 
 class TrustUpdateResponse(BaseModel):

@@ -2,10 +2,11 @@
 # Purpose: PacketFlow next-hop scoring and route decision persistence.
 
 import json
+import math
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Edge, Hub, Parcel, RouteDecision
+from app.db.models import Edge, Hub, Parcel, RouteDecision, Event
 from app.engines.explanation_engine import generate_route_reason
 from app.engines.graph_engine import (
     HIGH_ETA,
@@ -14,6 +15,31 @@ from app.engines.graph_engine import (
     get_neighbors,
 )
 from app.utils.time_utils import utc_now_iso
+
+
+def calculate_mkt(db: Session, parcel_id: str) -> float | None:
+    events = (
+        db.query(Event)
+        .filter(Event.parcel_id == parcel_id, Event.temperature_c.isnot(None))
+        .all()
+    )
+    temps = [float(e.temperature_c) for e in events if e.temperature_c is not None]
+    if not temps:
+        return None
+    try:
+        sum_exp = 0.0
+        for temp_c in temps:
+            temp_k = temp_c + 273.15
+            if temp_k <= 0:
+                continue
+            sum_exp += math.exp(-10000.0 / temp_k)
+        if sum_exp == 0:
+            return sum(temps) / len(temps)
+        avg_exp = sum_exp / len(temps)
+        tk = 10000.0 / (-math.log(avg_exp))
+        return tk - 273.15
+    except Exception:
+        return sum(temps) / len(temps)
 
 SLA_WEIGHT = 0.30
 CONGESTION_WEIGHT = 0.25
@@ -63,9 +89,13 @@ def calculate_condition_risk(db: Session, parcel: Parcel, route: list[str]) -> f
     route_after_current = route[1:]
     contains_cold_chain = any((hub := db.get(Hub, hub_id)) is not None and hub.cold_chain for hub_id in route_after_current)
 
-    if parcel.current_temperature is None:
+    mkt = calculate_mkt(db, parcel.id)
+    if mkt is None:
+        mkt = parcel.current_temperature
+
+    if mkt is None:
         return 0.35
-    if parcel.current_temperature <= parcel.temperature_limit:
+    if mkt <= parcel.temperature_limit:
         return 0.10 if contains_cold_chain else 0.35
     
     has_dedicated_cold = any("COLD" in hub_id for hub_id in route_after_current)

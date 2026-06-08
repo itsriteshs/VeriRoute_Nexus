@@ -15,8 +15,111 @@ from app.engines.trust_engine import update_hub_trust
 from app.schemas.scan_schema import ScanRequest
 from app.utils.geo import haversine_distance_m, is_within_geofence
 from app.utils.time_utils import parse_iso_timestamp, utc_now_iso
+import hmac
+import hashlib
+import time
+import struct
 
 SENSITIVE_PARCEL_TYPES = {"medicine", "vaccine", "food", "dairy", "seafood", "cold_chain"}
+
+
+def verify_totp_token(token: str, secret: str, interval: int = 30) -> bool:
+    t = int(time.time() / interval)
+    key = secret.encode("utf-8")
+    for step in [t, t - 1]:
+        msg = struct.pack(">Q", step)
+        h = hmac.new(key, msg, hashlib.sha256).digest()
+        offset = h[-1] & 0x0f
+        code = ((h[offset] & 0x7f) << 24 |
+                (h[offset + 1] & 0xff) << 16 |
+                (h[offset + 2] & 0xff) << 8 |
+                (h[offset + 3] & 0xff))
+        if f"{code % 1000000:06d}" == token:
+            return True
+    return False
+
+
+def check_zero_trust_handshake(db: Session, parcel: Parcel, hub: Hub, scan_request: ScanRequest) -> tuple[str, str | None, dict[str, Any]]:
+    token = scan_request.totp_token
+    if token is None:
+        return constants.CHECK_PASS, None, {"info": "TOTP verification bypassed (no token provided)"}
+    
+    secret = f"{parcel.id}_packetflow_secret_key"
+    if verify_totp_token(token, secret):
+        return constants.CHECK_PASS, None, {"totp_token": token, "verified": True}
+    return constants.CHECK_WARN, "Zero-Trust Handshake warning: TOTP token is invalid or expired.", {"totp_token": token, "verified": False}
+
+
+def check_mesh_consensus(db: Session, parcel: Parcel, hub: Hub, scan_request: ScanRequest) -> tuple[str, str | None, dict[str, Any]]:
+    witnesses = scan_request.witness_node_ids
+    if witnesses is None:
+        return constants.CHECK_PASS, None, {"info": "Mesh consensus bypassed (no witness IDs provided)"}
+    
+    if not witnesses:
+        return constants.CHECK_WARN, "Mesh consensus warning: No BLE witness nodes detected in proximity.", {}
+    
+    valid_witnesses = []
+    for w_id in witnesses:
+        w_hub = db.get(Hub, w_id)
+        if w_hub and w_hub.status == "active":
+            valid_witnesses.append(w_id)
+            
+    if not valid_witnesses:
+        return constants.CHECK_WARN, f"Mesh consensus warning: Proximity witness nodes {witnesses} are invalid or inactive.", {"witnesses": witnesses}
+        
+    return constants.CHECK_PASS, None, {"witnesses": witnesses, "verified_witnesses": valid_witnesses}
+
+
+def check_statistical_anomaly(db: Session, parcel: Parcel, hub: Hub, scan_request: ScanRequest) -> tuple[str, str | None, dict[str, Any]]:
+    recent_events = (
+        db.query(Event)
+        .filter(Event.hub_id == hub.id)
+        .order_by(Event.id.desc())
+        .limit(15)
+        .all()
+    )
+    
+    if len(recent_events) < 5:
+        return constants.CHECK_PASS, None, {"info": "Insufficient history for statistical anomaly check"}
+    
+    timestamps = []
+    for e in recent_events:
+        t = parse_iso_timestamp(e.timestamp)
+        if t:
+            timestamps.append(t)
+            
+    if len(timestamps) < 5:
+        return constants.CHECK_PASS, None, {"info": "Insufficient valid timestamps"}
+        
+    timestamps.sort()
+    intervals = []
+    for i in range(len(timestamps) - 1):
+        diff = (timestamps[i+1] - timestamps[i]).total_seconds()
+        intervals.append(max(0.1, diff))
+        
+    if len(intervals) < 4:
+        return constants.CHECK_PASS, None, {"info": "Insufficient intervals"}
+        
+    mean_val = sum(intervals) / len(intervals)
+    variance = sum((x - mean_val) ** 2 for x in intervals) / len(intervals)
+    std_dev = variance ** 0.5
+    
+    last_event_time = timestamps[-1]
+    current_interval = (datetime.now(UTC) - last_event_time).total_seconds()
+    current_interval = max(0.1, current_interval)
+    
+    if std_dev < 1.0:
+        std_dev = 1.0
+        
+    z_score = abs(current_interval - mean_val) / std_dev
+    
+    trace = {"mean_interval_sec": round(mean_val, 2), "std_dev": round(std_dev, 2), "current_interval_sec": round(current_interval, 2), "z_score": round(z_score, 2)}
+    if z_score > 3.0 and current_interval < mean_val:
+        return constants.CHECK_FAIL, f"Statistical anomaly detected at {hub.id}: scan frequency spike (Z-score {z_score:.2f} > 3).", trace
+        
+    return constants.CHECK_PASS, None, trace
+
+
 
 
 def _dump_model(model: ScanRequest) -> str:
@@ -149,6 +252,34 @@ def check_clone_scan(db: Session, parcel: Parcel, hub: Hub, scan_request: ScanRe
     return constants.CHECK_PASS, None, {}
 
 
+def calculate_mkt_with_current(db: Session, parcel: Parcel, current_temp: float | None) -> float | None:
+    events = (
+        db.query(Event)
+        .filter(Event.parcel_id == parcel.id, Event.temperature_c.isnot(None))
+        .all()
+    )
+    temps = [float(e.temperature_c) for e in events if e.temperature_c is not None]
+    if current_temp is not None:
+        temps.append(current_temp)
+    if not temps:
+        return None
+    try:
+        import math
+        sum_exp = 0.0
+        for temp_c in temps:
+            temp_k = temp_c + 273.15
+            if temp_k <= 0:
+                continue
+            sum_exp += math.exp(-10000.0 / temp_k)
+        if sum_exp == 0:
+            return sum(temps) / len(temps)
+        avg_exp = sum_exp / len(temps)
+        tk = 10000.0 / (-math.log(avg_exp))
+        return tk - 273.15
+    except Exception:
+        return sum(temps) / len(temps)
+
+
 def check_cold_chain(db: Session, parcel: Parcel, hub: Hub, scan_request: ScanRequest) -> tuple[str, str | None, dict[str, Any]]:
     if parcel.parcel_type not in SENSITIVE_PARCEL_TYPES:
         return constants.CHECK_PASS, None, {}
@@ -158,12 +289,18 @@ def check_cold_chain(db: Session, parcel: Parcel, hub: Hub, scan_request: ScanRe
     temperature = scan_request.temperature_c if scan_request.temperature_c is not None else parcel.current_temperature
     if temperature is None:
         return constants.CHECK_WARN, "Temperature missing for cold-chain parcel.", {}
-    if temperature <= parcel.temperature_limit:
-        return constants.CHECK_PASS, None, {"temperature_c": temperature, "limit": parcel.temperature_limit}
+
+    mkt = calculate_mkt_with_current(db, parcel, scan_request.temperature_c)
+    if mkt is None:
+        mkt = temperature
+
+    trace = {"temperature_c": temperature, "mkt_c": round(mkt, 2), "limit": parcel.temperature_limit}
+    if mkt <= parcel.temperature_limit:
+        return constants.CHECK_PASS, None, trace
     return (
         constants.CHECK_FAIL,
-        f"Cold-chain breach detected: {parcel.id} measured {temperature}C above limit {parcel.temperature_limit}C.",
-        {"temperature_c": temperature, "limit": parcel.temperature_limit},
+        f"Cold-chain breach detected: {parcel.id} Mean Kinetic Temperature ({mkt:.1f}C) exceeds limit {parcel.temperature_limit}C.",
+        trace,
     )
 
 
@@ -177,6 +314,7 @@ def decide_scan_result(check_results: dict[str, dict[str, Any]]) -> dict[str, ob
     priority = [
         ("tamper", constants.DECISION_HOLD, constants.ACTION_ALERT_AND_HOLD, constants.LED_RED),
         ("clone_scan", constants.DECISION_BLOCKED, constants.ACTION_QUARANTINE_MOVEMENT_CLAIM, constants.LED_RED),
+        ("statistical_anomaly", constants.DECISION_BLOCKED, constants.ACTION_QUARANTINE_MOVEMENT_CLAIM, constants.LED_RED),
         ("geofence", constants.DECISION_BLOCKED, constants.ACTION_QUARANTINE_MOVEMENT_CLAIM, constants.LED_RED),
         ("speed", constants.DECISION_BLOCKED, constants.ACTION_QUARANTINE_MOVEMENT_CLAIM, constants.LED_RED),
         ("route_graph", constants.DECISION_BLOCKED, constants.ACTION_QUARANTINE_MOVEMENT_CLAIM, constants.LED_RED),
@@ -262,6 +400,9 @@ def validate_scan(db: Session, scan_request: ScanRequest) -> dict[str, Any]:
         "clone_scan": check_clone_scan(db, parcel, hub, scan_request),
         "cold_chain": check_cold_chain(db, parcel, hub, scan_request),
         "tamper": check_tamper(db, parcel, hub, scan_request),
+        "zero_trust_handshake": check_zero_trust_handshake(db, parcel, hub, scan_request),
+        "mesh_consensus": check_mesh_consensus(db, parcel, hub, scan_request),
+        "statistical_anomaly": check_statistical_anomaly(db, parcel, hub, scan_request),
     }
     check_results = {
         name: {"status": status, "reason": reason, "trace": trace}
@@ -285,6 +426,9 @@ def validate_scan(db: Session, scan_request: ScanRequest) -> dict[str, Any]:
             clone_scan=check_results["clone_scan"]["status"],
             cold_chain=check_results["cold_chain"]["status"],
             tamper=check_results["tamper"]["status"],
+            zero_trust_handshake=check_results["zero_trust_handshake"]["status"],
+            mesh_consensus=check_results["mesh_consensus"]["status"],
+            statistical_anomaly=check_results["statistical_anomaly"]["status"],
             failed_checks=json.dumps(failed_checks),
             decision=decision,
             severity="info" if decision == constants.DECISION_ACCEPTED else "warning",

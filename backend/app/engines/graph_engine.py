@@ -54,12 +54,57 @@ def get_active_edge(db: Session, from_hub: str, to_hub: str) -> Edge | None:
     )
 
 
-def get_effective_eta(edge: Edge) -> float:
+def get_effective_eta(db: Session, edge: Edge) -> float:
     traffic_risk = float(edge.traffic_risk or 0.0)
     weather_risk = float(edge.weather_risk or 0.0)
     eff_traffic = traffic_risk if traffic_risk > 0.30 else 0.0
     eff_weather = weather_risk if weather_risk > 0.30 else 0.0
-    return float(edge.eta_min) * (1.0 + eff_traffic * 0.75 + eff_weather * 0.50)
+    base_eta = float(edge.eta_min) * (1.0 + eff_traffic * 0.75 + eff_weather * 0.50)
+    
+    from_hub = db.get(Hub, edge.from_hub)
+    to_hub = db.get(Hub, edge.to_hub)
+    multiplier = 1.0
+    
+    from_low_trust = from_hub is not None and from_hub.trust_score < 0.60
+    to_low_trust = to_hub is not None and to_hub.trust_score < 0.60
+    
+    if from_low_trust or to_low_trust:
+        multiplier = 2.5
+    else:
+        # Byzantine quarantine propagation check
+        neighbor_low_trust = False
+        if from_hub:
+            low_trust_connected = db.query(Hub).filter(
+                Hub.trust_score < 0.60
+            ).filter(
+                (Hub.id.in_(
+                    db.query(Edge.to_hub).filter(Edge.from_hub == from_hub.id, Edge.status == "active")
+                )) |
+                (Hub.id.in_(
+                    db.query(Edge.from_hub).filter(Edge.to_hub == from_hub.id, Edge.status == "active")
+                ))
+            ).first()
+            if low_trust_connected:
+                neighbor_low_trust = True
+                
+        if to_hub and not neighbor_low_trust:
+            low_trust_connected = db.query(Hub).filter(
+                Hub.trust_score < 0.60
+            ).filter(
+                (Hub.id.in_(
+                    db.query(Edge.to_hub).filter(Edge.from_hub == to_hub.id, Edge.status == "active")
+                )) |
+                (Hub.id.in_(
+                    db.query(Edge.from_hub).filter(Edge.to_hub == to_hub.id, Edge.status == "active")
+                ))
+            ).first()
+            if low_trust_connected:
+                neighbor_low_trust = True
+                
+        if neighbor_low_trust:
+            multiplier = 1.5
+            
+    return base_eta * multiplier
 
 
 def find_shortest_route_by_eta(db: Session, start_hub: str, destination_hub: str) -> tuple[list[str], float]:
@@ -80,7 +125,7 @@ def find_shortest_route_by_eta(db: Session, start_hub: str, destination_hub: str
             edge = get_active_edge(db, hub_id, neighbor.id)
             if edge is None:
                 continue
-            next_eta = eta_so_far + get_effective_eta(edge)
+            next_eta = eta_so_far + get_effective_eta(db, edge)
             if next_eta < best_eta.get(neighbor.id, HIGH_ETA):
                 best_eta[neighbor.id] = next_eta
                 heappush(queue, (next_eta, neighbor.id, [*path, neighbor.id]))
@@ -102,4 +147,4 @@ def find_route_via_candidate(
     if not tail_route:
         return [], HIGH_ETA
 
-    return [current_hub, *tail_route], get_effective_eta(first_edge) + tail_eta
+    return [current_hub, *tail_route], get_effective_eta(db, first_edge) + tail_eta
