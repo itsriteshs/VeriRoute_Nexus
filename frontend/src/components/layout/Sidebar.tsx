@@ -56,6 +56,11 @@ export default function Sidebar({ currentPath, onNavigate }: SidebarProps) {
         <p>{relayStatus.title}</p>
         <strong>{relayStatus.route}</strong>
         <StatusBadge label={relayStatus.status} tone="warning" />
+        <div className="relay-card__wave" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
       </section>
     </aside>
   );

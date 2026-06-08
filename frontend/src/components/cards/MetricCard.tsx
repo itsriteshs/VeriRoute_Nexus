@@ -14,6 +14,7 @@ export default function MetricCard({ metric }: MetricCardProps) {
           <ArrowUpRight size={16} strokeWidth={1.9} />
         </span>
       </div>
+      <span className="metric-card__rail" aria-hidden="true" />
       <p className="metric-card__value">{metric.value}</p>
       <p className="metric-card__description">{metric.description}</p>
       <p className="metric-card__meta">{metric.meta}</p>

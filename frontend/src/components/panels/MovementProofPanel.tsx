@@ -34,6 +34,12 @@ export default function MovementProofPanel({ movementProof }: MovementProofPanel
         <em>Edge verification</em>
       </div>
 
+      <div className={`proof-panel__led proof-panel__led--${movementProof.led.toLowerCase()}`}>
+        <span>LED</span>
+        <strong>{movementProof.led}</strong>
+        <i aria-hidden="true" />
+      </div>
+
       <dl className="proof-checks">
         {checks.map(([label, value]) => (
           <div className={(label === 'Geofence' && movementProof.geofence === 'FAIL') || label === 'LED' && movementProof.led === 'RED' ? 'is-danger' : ''} key={label}>
