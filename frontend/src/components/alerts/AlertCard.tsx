@@ -13,6 +13,7 @@ export default function AlertCard({ alert, isSelected = false, onSelect }: Alert
       onClick={() => onSelect?.(alert)}
       type="button"
     >
+      <i className="alert-card__dot" aria-hidden="true" />
       <span>{alert.status}</span>
       <div>
         <strong>{alert.title}</strong>

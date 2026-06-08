@@ -25,6 +25,12 @@ export default function PacketFlowDecision({ routeDecision }: PacketFlowDecision
 
       <p className="module-card__copy">{routeDecision.reason}</p>
 
+      <div className="decision-panel__signal">
+        <span>Routing confidence</span>
+        <strong>0.91</strong>
+        <i aria-hidden="true" />
+      </div>
+
       <dl className="decision-panel__meta">
         <div>
           <dt>Decision type</dt>

@@ -7,6 +7,8 @@ type ParcelCardProps = {
 
 export default function ParcelCard({ parcel }: ParcelCardProps) {
   const temperatureRisk = parcel.temperature_c > parcel.temperature_limit_c;
+  const slaProgress = Math.max(0, Math.min(100, (parcel.sla_remaining_min / parcel.sla_minutes) * 100));
+  const temperatureProgress = Math.max(0, Math.min(100, (parcel.temperature_c / parcel.temperature_limit_c) * 100));
   const rows = [
     ['Current hub', parcel.current_hub],
     ['Previous hub', parcel.previous_hub ?? 'None'],
@@ -32,6 +34,19 @@ export default function ParcelCard({ parcel }: ParcelCardProps) {
         <span>{parcel.type} parcel</span>
         <span>Priority {parcel.priority}</span>
         <span>{parcel.trust_state}</span>
+      </div>
+
+      <div className="parcel-card__signal-grid">
+        <div>
+          <span>SLA reserve</span>
+          <strong>{parcel.sla_remaining_min} / {parcel.sla_minutes} min</strong>
+          <i style={{ width: `${slaProgress}%` }} />
+        </div>
+        <div className={temperatureRisk ? 'is-warning' : ''}>
+          <span>Thermal load</span>
+          <strong>{formatTemperature(parcel.temperature_c)} / {formatTemperature(parcel.temperature_limit_c)}</strong>
+          <i style={{ width: `${temperatureProgress}%` }} />
+        </div>
       </div>
 
       <dl className="parcel-card__grid">

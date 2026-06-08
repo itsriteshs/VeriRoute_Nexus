@@ -16,7 +16,11 @@ export default function TopBar() {
             <StatusBadge key={badge.label} label={badge.label} tone={badge.tone} />
           ))}
         </div>
-        <span className="team-pill">Team Aristotle</span>
+        <span className="topbar__sync">SYNC 142MS</span>
+        <span className="team-pill">
+          <i aria-hidden="true" />
+          Team Aristotle
+        </span>
       </div>
     </header>
   );
