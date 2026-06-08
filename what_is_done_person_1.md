@@ -17,10 +17,11 @@ Backend + Algorithms Lead
 | 2026-06-08 | Added Phase 2 PacketFlow route scoring, route persistence, and `/route` APIs | `backend/app/engines/routing_engine.py`, `POST /route/next-hop` |
 | 2026-06-08 | Added Phase 3/4 ImmuneNet scan validation and trust scoring | `POST /scan`, `GET /trust/hubs`, `backend/app/engines/immune_engine.py` |
 | 2026-06-08 | Added AgentOps scenario endpoints, WebSocket broadcasts, hardware scan/P2P endpoints, parcel create/upsert, and frontend-compatible demo snapshot | `POST /scenario/*`, `WS /ws`, `POST /hardware/scan`, `POST /parcels`, `GET /demo/snapshot` |
+| 2026-06-09 | Implemented advanced cryptographic, Bayesian, consensus, and statistical upgrades for PacketFlow ImmuneNet | sqlite WAL, SHA-256 event chaining, Beta-Bernoulli trust, TOTP, BLE Witness Mesh, Z-Score anomaly, WHO MKT |
 
 ## Current Working Branch
 
-`hardware-dual-node-foundation`
+`lakshanya-june-9th`
 
 ## Completed Tasks
 
@@ -244,6 +245,7 @@ The backend is now the source of truth for the PacketFlow ImmuneNet demo. It own
 
 - [x] FastAPI setup
 - [x] SQLite schema
+- [x] SQLite WAL mode
 - [x] seed data
 - [x] routing engine
 - [x] ImmuneNet 6 checks
@@ -254,3 +256,10 @@ The backend is now the source of truth for the PacketFlow ImmuneNet demo. It own
 - [x] metrics
 - [x] demo reset
 - [x] tests
+- [x] Cryptographic SHA-256 event chaining
+- [x] Bayesian Beta-Bernoulli trust updates
+- [x] Zero-Trust TOTP Handshake check
+- [x] BLE Proximity Witness Mesh check
+- [x] Z-Score Statistical Anomaly detector
+- [x] WHO Mean Kinetic Temperature (MKT) math
+- [x] Local Offline Sync Queue and Flush simulation

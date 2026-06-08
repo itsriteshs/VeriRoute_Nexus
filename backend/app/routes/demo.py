@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core import constants
 from app.core.websocket_manager import safe_broadcast
 from app.db.database import get_db
-from app.db.models import Hub, Parcel
+from app.db.models import Hub, Parcel, Event
 from app.engines.demo_engine import reset_demo_state, get_demo_snapshot, validate_demo_flow
 from app.engines.metrics_engine import get_starter_metrics
 from app.engines.routing_engine import select_next_hop
@@ -113,4 +113,24 @@ async def run_main_wow(db: Session = Depends(get_db)):
             {"step": "temperature_breach", "result": temp_breach_res},
         ]
     }
+
+
+@router.post("/toggle-sync")
+async def toggle_sync(db: Session = Depends(get_db)):
+    from app.db import models
+    models.IS_OFFLINE = not models.IS_OFFLINE
+    await safe_broadcast("sync_status_changed", {"is_offline": models.IS_OFFLINE})
+    return {"status": "success", "is_offline": models.IS_OFFLINE}
+
+
+@router.post("/flush-sync")
+async def flush_sync(db: Session = Depends(get_db)):
+    unsynced = db.query(Event).filter(Event.synced == False).all()
+    for e in unsynced:
+        e.synced = True
+    db.commit()
+    await safe_broadcast("sync_flushed", {"flushed_count": len(unsynced)})
+    await safe_broadcast("metrics_updated", get_starter_metrics(db))
+    return {"status": "success", "flushed_count": len(unsynced)}
+
 

@@ -31,6 +31,11 @@ export type LiveDemoState = DemoState & {
   weatherRisk: () => Promise<void>;
   cloneScan: () => Promise<void>;
   tamperEvent: () => Promise<void>;
+  isOffline: boolean;
+  unsyncedCount: number;
+  toggleSync: () => Promise<void>;
+  flushSync: () => Promise<void>;
+  verifyChain: (parcelId: string) => Promise<any>;
 };
 
 export function usePacketFlowLiveState(): LiveDemoState {
@@ -39,6 +44,8 @@ export function usePacketFlowLiveState(): LiveDemoState {
   const [backendMode, setBackendMode] = useState<'live' | 'mock'>('mock');
   const [lastEvent, setLastEvent] = useState<string>('Local initialization');
   const [wsStatus, setWsStatus] = useState<SocketStatus>('disconnected');
+  const [isOffline, setIsOffline] = useState<boolean>(false);
+  const [unsyncedCount, setUnsyncedCount] = useState<number>(0);
 
   // Live state variables
   const [hubs, setHubs] = useState<any[]>([]);
@@ -78,6 +85,9 @@ export function usePacketFlowLiveState(): LiveDemoState {
         const mappedHubs = mapBackendHubs(snapshot.hubs || []);
         setHubs(mappedHubs);
         setEdges(mapBackendEdges(snapshot.edges || []));
+
+        setIsOffline(!!snapshot.is_offline);
+        setUnsyncedCount(Number(snapshot.unsynced_count || 0));
 
         if (snapshot.latest_route?.candidate_scores) {
           try {
@@ -441,6 +451,57 @@ export function usePacketFlowLiveState(): LiveDemoState {
     }
   };
 
+  const toggleSync = async () => {
+    if (backendMode === 'mock') {
+      showToast('Offline sync toggle requires live backend mode.');
+      return;
+    }
+    try {
+      const res: any = await apiPost('/demo/toggle-sync');
+      if (res) {
+        setIsOffline(res.is_offline);
+        showToast(res.is_offline ? 'System simulated offline.' : 'System restored online.');
+        await syncBackend();
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to toggle sync.');
+    }
+  };
+
+  const flushSync = async () => {
+    if (backendMode === 'mock') {
+      showToast('Offline flush requires live backend mode.');
+      return;
+    }
+    try {
+      const res: any = await apiPost('/demo/flush-sync');
+      if (res) {
+        setUnsyncedCount(0);
+        showToast(`Flushed ${res.flushed_count} queued events to remote ledger.`);
+        await syncBackend();
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to flush sync.');
+    }
+  };
+
+  const verifyChain = async (parcelId: string) => {
+    if (backendMode === 'mock') {
+      showToast('Ledger verification requires live backend mode.');
+      return { verified: true, chain_length: 0, reason: 'Mock mode bypass' };
+    }
+    try {
+      const res = await apiGet(`/ledger/verify/${parcelId}`);
+      return res;
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to verify ledger chain.');
+      return null;
+    }
+  };
+
   const resetDemo = async () => {
     if (backendMode === 'mock') {
       mockState.resetDemo();
@@ -469,6 +530,11 @@ export function usePacketFlowLiveState(): LiveDemoState {
       weatherRisk,
       cloneScan,
       tamperEvent,
+      isOffline: false,
+      unsyncedCount: 0,
+      toggleSync: async () => {},
+      flushSync: async () => {},
+      verifyChain: async () => ({ verified: true, chain_length: 0 }),
     } as LiveDemoState;
   }
 
@@ -516,5 +582,10 @@ export function usePacketFlowLiveState(): LiveDemoState {
     weatherRisk,
     cloneScan,
     tamperEvent,
+    isOffline,
+    unsyncedCount,
+    toggleSync,
+    flushSync,
+    verifyChain,
   } as LiveDemoState;
 }

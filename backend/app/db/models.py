@@ -86,8 +86,14 @@ class Event(Base):
     synced: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+IS_OFFLINE = False
+
+
 @event.listens_for(Event, "before_insert")
 def receive_before_insert(mapper, connection, target):
+    # Set synced flag based on offline simulation status
+    target.synced = not IS_OFFLINE
+
     # Only calculate prev_hash if not already set manually and parcel_id exists
     if not target.prev_hash and target.parcel_id:
         result = connection.execute(

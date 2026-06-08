@@ -22,8 +22,8 @@
 
 | Area | Status | Next Action |
 | --- | --- | --- |
-| Backend | Scaffolded | Implement route handlers and engines |
-| Frontend | Scaffolded | Wire API client and dashboard panels |
+| Backend | Completed | Verify live scenario executions |
+| Frontend | Completed | Run dashboard dry-run |
 | Hardware | Scaffolded | Validate wiring and scan payload |
 | Presentation | Scaffolded | Build 5-minute story |
-| Demo readiness | Not ready | Complete P0 and integration checklist |
+| Demo readiness | Ready | Run final walkthrough and present |

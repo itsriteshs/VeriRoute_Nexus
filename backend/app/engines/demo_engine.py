@@ -145,6 +145,7 @@ def get_demo_snapshot(db: Session) -> dict:
         for disruption in disruptions
     ]
 
+    from app.db import models
     return {
         "parcel": parcel_dict,
         "parcels": parcels_list,
@@ -156,6 +157,8 @@ def get_demo_snapshot(db: Session) -> dict:
         "latest_events": events_list,
         "recent_events": events_list,
         "active_disruptions": disruptions_list,
+        "is_offline": getattr(models, "IS_OFFLINE", False),
+        "unsynced_count": db.query(Event).filter(Event.synced == False).count(),
     }
 
 

@@ -14,10 +14,11 @@ Frontend + Digital Twin + UX Lead
 | --- | --- | --- |
 | 2026-06-07 | Repository scaffold created | Initial commit |
 | 2026-06-08 | Integrated active React dashboard with backend API, WebSocket snapshot refresh, scan route, ledger route, parcel detail route, and missing scenario buttons | `frontend/src/hooks/usePacketFlowLiveState.ts`, `frontend/src/App.tsx`, `frontend/src/pages/ScanPage.tsx`, `frontend/src/pages/LedgerPage.tsx`, `frontend/src/pages/ParcelDetails.tsx` |
+| 2026-06-09 | Extended React hook usePacketFlowLiveState with offline sync toggle, flush sync and ledger chain verification handlers | `frontend/src/hooks/usePacketFlowLiveState.ts` |
 
 ## Current Working Branch
 
-Ritesh-june-8th
+lakshanya-june-9th
 
 ## Completed Tasks
 
@@ -238,6 +239,8 @@ Ritesh-june-8th
 - [x] shared local demo state across pages
 - [x] scan page
 - [x] movement proof shell placeholder
-- [x] movement proof panel
 - [x] WebSocket
 - [x] UI polish
+- [x] Offline sync toggle React hook handler
+- [x] Flush sync React hook handler
+- [x] Ledger chain verification React hook handler
