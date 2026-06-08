@@ -1,8 +1,26 @@
-import { Search } from 'lucide-react';
-import { topBarBadges } from '../../data/mockData';
+// Owner: Person 2 — Frontend + Digital Twin + UX Lead
+// Purpose: Main header bar with search field, live status indicators, and manual sync controls.
+
+import { Search, RefreshCw } from 'lucide-react';
 import StatusBadge from '../cards/StatusBadge';
 
-export default function TopBar() {
+type TopBarProps = {
+  demo?: any;
+};
+
+export default function TopBar({ demo }: TopBarProps) {
+  const backendMode = demo?.backendMode || 'mock';
+  const websocketStatus = demo?.websocketStatus || 'disconnected';
+  const lastEvent = demo?.lastEvent || 'None';
+
+  const isHardwareEvent =
+    lastEvent.includes('hardware') ||
+    lastEvent.includes('p2p') ||
+    lastEvent.includes('ble') ||
+    lastEvent.includes('esp_now');
+  const hardwareLabel = isHardwareEvent ? 'Hardware: Event Received' : 'Hardware: Standby';
+  const hardwareTone = isHardwareEvent ? 'primary' : 'muted';
+
   return (
     <header className="topbar">
       <label className="search-field">
@@ -12,11 +30,57 @@ export default function TopBar() {
 
       <div className="topbar__right">
         <div className="topbar__badges">
-          {topBarBadges.map((badge) => (
-            <StatusBadge key={badge.label} label={badge.label} tone={badge.tone} />
-          ))}
+          <StatusBadge
+            label={backendMode === 'live' ? 'Backend: Live' : 'Backend: Mock'}
+            tone={backendMode === 'live' ? 'primary' : 'warning'}
+          />
+          <StatusBadge
+            label={
+              websocketStatus === 'connected'
+                ? 'WebSocket: Connected'
+                : websocketStatus === 'connecting'
+                ? 'WebSocket: Reconnecting'
+                : websocketStatus === 'error'
+                ? 'WebSocket: Error'
+                : 'WebSocket: Offline'
+            }
+            tone={
+              websocketStatus === 'connected'
+                ? 'primary'
+                : websocketStatus === 'connecting'
+                ? 'warning'
+                : 'muted'
+            }
+          />
+          <StatusBadge label={hardwareLabel} tone={hardwareTone} />
         </div>
-        <span className="topbar__sync">SYNC 142MS</span>
+        {demo?.syncBackend && (
+          <button
+            className="sync-button"
+            onClick={() => demo.syncBackend()}
+            title="Sync Backend State"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--color-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '11px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+            type="button"
+          >
+            <RefreshCw size={13} className={websocketStatus === 'connecting' ? 'spin' : ''} />
+            Sync
+          </button>
+        )}
+        <span className="topbar__sync" style={{ fontSize: '11px', color: 'var(--color-muted)' }}>
+          EVENT: {lastEvent.toUpperCase()}
+        </span>
         <span className="team-pill">
           <i aria-hidden="true" />
           Team Aristotle

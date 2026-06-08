@@ -6,6 +6,7 @@ type DemoControlsProps = {
   overloadHubB: () => void;
   raiseTemperature: () => void;
   resetDemo: () => void;
+  backendMode?: 'live' | 'mock';
 };
 
 const groups = [
@@ -27,6 +28,7 @@ const actionLabels = {
 };
 
 export default function DemoControls(props: DemoControlsProps) {
+  const isLive = props.backendMode === 'live';
   return (
     <section className="module-card demo-controls-panel">
       <div className="module-card__header">
@@ -34,7 +36,9 @@ export default function DemoControls(props: DemoControlsProps) {
           <p>Operator Console</p>
           <h2>Demo Controls</h2>
         </div>
-        <span className="mono-chip">LOCAL STATE</span>
+        <span className={`mono-chip ${isLive ? '' : 'mono-chip--warning'}`}>
+          {isLive ? 'LIVE BACKEND' : 'LOCAL MOCK'}
+        </span>
       </div>
 
       <div className="demo-control-groups">

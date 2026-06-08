@@ -4,13 +4,14 @@ import DemoTimeline from '../components/demo/DemoTimeline.tsx';
 import EventLedger from '../components/ledger/EventLedger.tsx';
 import AgentOpsMiniPanel from '../components/panels/AgentOpsMiniPanel.tsx';
 import ColdChainMiniPanel from '../components/panels/ColdChainMiniPanel.tsx';
-import type { DemoState } from '../hooks/useDemoState.ts';
+import type { LiveDemoState } from '../hooks/usePacketFlowLiveState.ts';
 
 type DemoControlsPageProps = {
-  demo: DemoState;
+  demo: LiveDemoState;
 };
 
 export default function DemoControlsPage({ demo }: DemoControlsPageProps) {
+  const isLive = demo.backendMode === 'live';
   return (
     <main className="dashboard">
       <DemoEventToast message={demo.toast} />
@@ -20,7 +21,9 @@ export default function DemoControlsPage({ demo }: DemoControlsPageProps) {
           <h1>Demo Controls</h1>
           <p>Drive the judge sequence from one panel and watch local state update across every page.</p>
         </div>
-        <span className="mono-chip">LOCAL STATE</span>
+        <span className={`mono-chip ${isLive ? '' : 'mono-chip--warning'}`}>
+          {isLive ? 'LIVE BACKEND' : 'LOCAL MOCK'}
+        </span>
       </section>
 
       <section className="command-grid" aria-label="Demo control modules">
@@ -32,6 +35,7 @@ export default function DemoControlsPage({ demo }: DemoControlsPageProps) {
           raiseTemperature={demo.raiseTemperature}
           resetDemo={demo.resetDemo}
           triggerHandshake={demo.triggerHandshake}
+          backendMode={demo.backendMode}
         />
         <DemoTimeline alerts={demo.alerts} />
         <AgentOpsMiniPanel event={demo.agentOpsEvent} />

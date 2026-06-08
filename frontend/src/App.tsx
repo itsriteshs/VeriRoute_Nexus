@@ -6,13 +6,13 @@ import DigitalTwinPage from './pages/DigitalTwinPage.tsx';
 import ImmuneNetPage from './pages/ImmuneNetPage.tsx';
 import ParcelsPage from './pages/ParcelsPage.tsx';
 import TrustBoardPage from './pages/TrustBoardPage.tsx';
-import { useDemoState, type DemoState } from './hooks/useDemoState.ts';
+import { usePacketFlowLiveState, type LiveDemoState } from './hooks/usePacketFlowLiveState.ts';
 
 const routePaths = ['/dashboard', '/digital-twin', '/parcels', '/immunenet', '/trust-board', '/demo-controls'] as const;
 type RoutePath = (typeof routePaths)[number];
 
 type RoutedPageProps = {
-  demo: DemoState;
+  demo: LiveDemoState;
 };
 
 function normalizePath(pathname: string): RoutePath {
@@ -21,7 +21,7 @@ function normalizePath(pathname: string): RoutePath {
 }
 
 export default function App() {
-  const demo = useDemoState();
+  const demo = usePacketFlowLiveState();
   const [currentPath, setCurrentPath] = useState<RoutePath>(() => normalizePath(window.location.pathname));
   const routes = useMemo<Record<RoutePath, ComponentType<RoutedPageProps>>>(
     () => ({
@@ -52,7 +52,7 @@ export default function App() {
   const Page = routes[currentPath];
 
   return (
-    <AppShell currentPath={currentPath} onNavigate={navigate}>
+    <AppShell currentPath={currentPath} onNavigate={navigate} demo={demo}>
       <Page demo={demo} />
     </AppShell>
   );
