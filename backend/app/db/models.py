@@ -21,6 +21,8 @@ class Hub(Base):
     cold_chain: Mapped[bool] = mapped_column(Boolean, default=False)
     queue_load: Mapped[float] = mapped_column(Float, default=0.0)
     anomaly_count: Mapped[int] = mapped_column(Integer, default=0)
+    alpha: Mapped[int] = mapped_column(Integer, default=10)
+    beta: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[str | None] = mapped_column(String, nullable=True)
     updated_at: Mapped[str | None] = mapped_column(String, nullable=True)
 
@@ -78,6 +80,9 @@ class Event(Base):
     severity: Mapped[str | None] = mapped_column(String, nullable=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     raw_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prev_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    event_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    synced: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class ImmuneCheck(Base):

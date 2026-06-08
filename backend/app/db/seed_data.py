@@ -19,13 +19,13 @@ from app.db.models import (
 from app.utils.time_utils import utc_now_iso
 
 HUBS = [
-    {"id": "HUB-A", "name": "Central Smart Hub A", "lat": 11.0168, "lng": 76.9558, "trust_score": 0.98, "status": "active", "congestion": 0.20, "cold_chain": False},
-    {"id": "HUB-B", "name": "Relay Hub B", "lat": 11.0250, "lng": 76.9650, "trust_score": 0.92, "status": "active", "congestion": 0.50, "cold_chain": False},
-    {"id": "HUB-C", "name": "Relay Hub C", "lat": 11.0350, "lng": 76.9750, "trust_score": 0.65, "status": "active", "congestion": 0.25, "cold_chain": False},
-    {"id": "COLD-HUB-C", "name": "Cold Chain Hub C", "lat": 11.0400, "lng": 76.9800, "trust_score": 0.95, "status": "active", "congestion": 0.30, "cold_chain": True},
-    {"id": "HUB-D", "name": "South Relay Hub D", "lat": 11.0050, "lng": 76.9700, "trust_score": 0.90, "status": "active", "congestion": 0.20, "cold_chain": False},
-    {"id": "HUB-E", "name": "Final Relay Hub E", "lat": 11.0450, "lng": 76.9900, "trust_score": 0.88, "status": "active", "congestion": 0.35, "cold_chain": True},
-    {"id": "CUSTOMER-ZONE", "name": "Customer Delivery Zone", "lat": 11.0550, "lng": 77.0000, "trust_score": 1.0, "status": "active", "congestion": 0.10, "cold_chain": False},
+    {"id": "HUB-A", "name": "Central Smart Hub A", "lat": 11.0168, "lng": 76.9558, "trust_score": 0.98, "status": "active", "congestion": 0.20, "cold_chain": False, "alpha": 98, "beta": 2},
+    {"id": "HUB-B", "name": "Relay Hub B", "lat": 11.0250, "lng": 76.9650, "trust_score": 0.92, "status": "active", "congestion": 0.50, "cold_chain": False, "alpha": 92, "beta": 8},
+    {"id": "HUB-C", "name": "Relay Hub C", "lat": 11.0350, "lng": 76.9750, "trust_score": 0.65, "status": "active", "congestion": 0.25, "cold_chain": False, "alpha": 65, "beta": 35},
+    {"id": "COLD-HUB-C", "name": "Cold Chain Hub C", "lat": 11.0400, "lng": 76.9800, "trust_score": 0.95, "status": "active", "congestion": 0.30, "cold_chain": True, "alpha": 95, "beta": 5},
+    {"id": "HUB-D", "name": "South Relay Hub D", "lat": 11.0050, "lng": 76.9700, "trust_score": 0.90, "status": "active", "congestion": 0.20, "cold_chain": False, "alpha": 90, "beta": 10},
+    {"id": "HUB-E", "name": "Final Relay Hub E", "lat": 11.0450, "lng": 76.9900, "trust_score": 0.88, "status": "active", "congestion": 0.35, "cold_chain": True, "alpha": 88, "beta": 12},
+    {"id": "CUSTOMER-ZONE", "name": "Customer Delivery Zone", "lat": 11.0550, "lng": 77.0000, "trust_score": 1.0, "status": "active", "congestion": 0.10, "cold_chain": False, "alpha": 100, "beta": 0},
 ]
 
 EDGES = [
