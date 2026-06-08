@@ -65,3 +65,60 @@ Final line: **We are not tracking parcels. We are proving movement.**
 ## Integration Rule
 
 All API contracts must be updated in `API_CONTRACT.md` before implementation changes. Any PR changing request payloads, response payloads, WebSocket events, or demo data shape must mention the contract update.
+
+## Future Phase: Hardware Integration
+
+Person 3's upgraded hardware plan is a Dual-Node SwarmFlow Relay Network with physical `HUB-A` and `HUB-B` SmartHub nodes, an ESP-NOW peer-to-peer handshake path, and an ESP32-C3 BLE Smart Parcel Tag. Phase 1 only prepares the backend ledger foundation; it does not implement hardware scan or peer-to-peer handshake endpoints.
+
+- `POST /hardware/scan` will later accept optional BLE fields: `ble_verified`, `ble_rssi_m`.
+- `POST /hardware/scan` will later accept optional ESP-NOW fields: `esp_now_prior_acceptance`, `esp_now_prior_hub`, `esp_now_trust_delta`.
+- `POST /hardware/p2p-handshake` will later log `p2p_handshake` events between `HUB-A` and `HUB-B`.
+
+The Phase 1 event ledger stores `event_type` as text and `raw_payload` as JSON text so future ESP-NOW/BLE metadata can be recorded without changing `GET /ledger/events`.
+
+## Phase 2: PacketFlow Routing
+
+PacketFlow routing is implemented as a deterministic next-hop decision layer. It scores active candidate routes using SLA risk, candidate congestion, hub trust risk, condition/cold-chain risk, and cost/emission score:
+
+```text
+0.30 * sla_risk + 0.25 * congestion_risk + 0.20 * trust_risk + 0.15 * condition_risk + 0.10 * cost_emission_score
+```
+
+For the seeded `MED-104` parcel at `HUB-A`, `POST /route/next-hop` selects `HUB-B` and returns the route `HUB-A -> HUB-B -> HUB-E -> CUSTOMER-ZONE`. Phase 2 does not implement scan validation, trust decay, AgentOps, WebSockets, hardware scan, ESP-NOW endpoints, BLE parsing, fake scan, clone scan, or temperature breach flows.
+
+## Phase 3 + 4: ImmuneNet Scan Validation And Trust
+
+ImmuneNet validates every scan as a movement claim using geofence, speed plausibility, route graph, clone scan, cold-chain, and tamper checks. The trust engine updates hub trust after each scan and records trust history. Accepted and rerouted scans recalculate PacketFlow routes.
+
+Demo commands:
+
+```bash
+curl -X POST http://localhost:8000/demo/seed
+
+curl -X POST http://localhost:8000/scan \
+  -H "Content-Type: application/json" \
+  -d '{"parcel_id":"MED-104","hub_id":"HUB-A","scanner_id":"SCANNER-07","rfid_verified":true,"qr_verified":true,"gps":{"lat":11.0168,"lng":76.9558,"accuracy_m":18},"temperature_c":24.3,"carrier_type":"van","tamper":false}'
+
+curl -X POST http://localhost:8000/scan/fake \
+  -H "Content-Type: application/json" \
+  -d '{"parcel_id":"MED-104","claimed_hub":"HUB-C","fake_gps":{"lat":11.1000,"lng":77.1000,"accuracy_m":20}}'
+
+curl -X POST http://localhost:8000/scan/clone \
+  -H "Content-Type: application/json" \
+  -d '{"parcel_id":"MED-104","first_hub":"HUB-B","second_hub":"HUB-D"}'
+
+curl -X POST http://localhost:8000/scan/tamper \
+  -H "Content-Type: application/json" \
+  -d '{"parcel_id":"MED-104","hub_id":"HUB-C","tamper":true}'
+
+curl -X POST http://localhost:8000/scan \
+  -H "Content-Type: application/json" \
+  -d '{"parcel_id":"MED-104","hub_id":"HUB-A","scanner_id":"SCANNER-07","rfid_verified":true,"qr_verified":true,"gps":{"lat":11.0168,"lng":76.9558,"accuracy_m":18},"temperature_c":29.2,"carrier_type":"van","tamper":false}'
+
+curl http://localhost:8000/trust/hubs
+curl http://localhost:8000/trust/history/HUB-C
+curl http://localhost:8000/ledger/events
+curl http://localhost:8000/metrics
+```
+
+Expected demo behavior: valid scan returns `ACCEPTED` and `GREEN`; fake scan returns `BLOCKED` and `RED`; clone scan returns `BLOCKED` with `clone_scan`; tamper scan returns `HOLD`; hot cold-chain scan returns `REROUTED` and `AMBER`. Phase 5 should add WebSocket live broadcasting next.

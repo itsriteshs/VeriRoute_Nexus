@@ -7,3 +7,5 @@ sqlalchemy
 aiosqlite
 paho-mqtt
 pytest
+httpx
+networkx

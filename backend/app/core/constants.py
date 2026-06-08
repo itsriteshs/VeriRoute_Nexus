@@ -1,4 +1,44 @@
 # Owner: Person 1 — Backend + Algorithms Lead
-# Purpose: constants placeholder.
+# Purpose: shared backend event type constants.
 
-TODO = "Implement constants placeholder."
+PARCEL_CREATED = "parcel_created"
+SCAN_RECEIVED = "scan_received"
+MOVEMENT_ACCEPTED = "movement_accepted"
+MOVEMENT_BLOCKED = "movement_blocked"
+MOVEMENT_WARNING = "movement_warning"
+ROUTE_DECISION = "route_decision"
+REROUTE_TRIGGERED = "reroute_triggered"
+TRUST_UPDATED = "trust_updated"
+TEMPERATURE_BREACH = "temperature_breach"
+FAKE_SCAN_BLOCKED = "fake_scan_blocked"
+CLONE_SCAN_BLOCKED = "clone_scan_blocked"
+TAMPER_ALERT = "tamper_alert"
+HUB_FAILED = "hub_failed"
+HUB_OVERLOADED = "hub_overloaded"
+P2P_HANDSHAKE = "p2p_handshake"
+METRICS_UPDATED = "metrics_updated"
+DEMO_RESET = "demo_reset"
+
+SYSTEM_READY = "system_ready"
+
+DECISION_ACCEPTED = "ACCEPTED"
+DECISION_WARNING = "WARNING"
+DECISION_BLOCKED = "BLOCKED"
+DECISION_REROUTED = "REROUTED"
+DECISION_HOLD = "HOLD"
+
+ACTION_UPDATE_LOCATION = "UPDATE_LOCATION"
+ACTION_QUARANTINE_MOVEMENT_CLAIM = "QUARANTINE_MOVEMENT_CLAIM"
+ACTION_REVIEW_REQUIRED = "REVIEW_REQUIRED"
+ACTION_REROUTE_TO_COLD_HUB = "REROUTE_TO_COLD_HUB"
+ACTION_ALERT_AND_HOLD = "ALERT_AND_HOLD"
+
+LED_GREEN = "GREEN"
+LED_RED = "RED"
+LED_AMBER = "AMBER"
+LED_RED_BLINK = "RED_BLINK"
+
+CHECK_PASS = "PASS"
+CHECK_FAIL = "FAIL"
+CHECK_WARN = "WARN"
+CHECK_SKIPPED = "SKIPPED"
