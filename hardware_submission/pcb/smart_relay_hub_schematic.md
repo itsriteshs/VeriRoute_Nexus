@@ -4,30 +4,28 @@ This document details the PCB schematic design, trace routing strategies, and Bi
 
 ---
 
-## 1. Schematic Design Details
+## 1. Schematic & PCB Connections
 
-The schematic is designed using standard 0.1-inch header connectors for pluggable development modules, minimizing component cost and streamlining hand-assembly.
+The Smart Relay Hub is built around the `ESP32-C3-DevKitM-1` module footprint. The custom v2 PCB is located at [SmartRelayHub_v2.kicad_pcb](file:///c:/Users/lakshanya/OneDrive/Desktop/veri/VeriRoute_Nexus/hardware_submission/pcb/SmartRelayHub_v2.kicad_pcb). It acts as a custom routing shield board that connects the ESP32-C3 module to the OLED and RFID headers. Other components (DHT22, LEDs, buzzer, button) are off-board and wired directly to the designated breakout pads.
 
-### 1.1 Schematic Netlist Connections
-* **Power Nets**:
-  + `+5V`: Derived from USB micro-B port on the ESP32 DevKit, routed to active 5V Buzzer power pin.
-  + `+3.3V`: Regulated output from the ESP32's onboard LDO. Routed to RFID VCC, OLED VCC, and DHT22 VCC.
-  + `GND`: Common ground plane connecting all modules, capacitors, and LEDs.
-* **SPI Bus (RFID RC522)**:
-  + Net `RFID_CS` -> ESP32 GPIO 5 (with 10k pull-up resistor to 3.3V)
-  + Net `SPI_SCK` -> ESP32 GPIO 18
-  + Net `SPI_MISO` -> ESP32 GPIO 19
-  + Net `SPI_MOSI` -> ESP32 GPIO 23
-  + Net `RFID_RST` -> ESP32 GPIO 22
-* **I2C Bus (OLED SSD1306)**:
-  + Net `I2C_SDA` -> ESP32 GPIO 21 (with 4.7k pull-up resistor to 3.3V)
-  + Net `I2C_SCL` -> ESP32 GPIO 22 (with 4.7k pull-up resistor to 3.3V)
-* **DHT22 Net**:
-  + Net `DHT_DATA` -> ESP32 GPIO 32 (with 10k pull-up resistor to 3.3V)
-* **Status Outputs**:
-  + Net `LED_GREEN` -> ESP32 GPIO 25 -> 220-ohm resistor -> Green LED -> GND
-  + Net `LED_RED` -> ESP32 GPIO 26 -> 220-ohm resistor -> Red LED -> GND
-  + Net `BUZZER_CTRL` -> ESP32 GPIO 14 -> Active Buzzer positive terminal -> GND
+### 1.1 Netlist Connections (v2 PCB Routing)
+* **Power & GND**:
+  + `+3.3V`: Regulated output from the ESP32-C3 module (Pad 15), routed to OLED header VCC (Pin 2) and RFID header VCC (Pin 1).
+  + `GND`: Common ground pour, connecting ESP32-C3 ground (Pads 1, 16), OLED GND (Pin 1), and RFID GND (Pin 3).
+* **I2C Bus (SSD1306 OLED Header)**:
+  + Net `I2C_SCL` -> ESP32-C3 Pad 2 -> OLED SCL (Pin 3)
+  + Net `I2C_SDA` -> ESP32-C3 Pad 3 -> OLED SDA (Pin 4)
+* **SPI Bus (RC522 RFID Header)**:
+  + Net `RFID_RST` -> ESP32-C3 Pad 5 -> RFID RST (Pin 2)
+  + Net `SPI_MOSI` -> ESP32-C3 Pad 6 -> RFID MOSI (Pin 6)
+  + Net `SPI_MISO` -> ESP32-C3 Pad 7 -> RFID MISO (Pin 5)
+  + Net `SPI_SCK` -> ESP32-C3 Pad 8 / 10 -> RFID SCK (Pin 7)
+  + Net `RFID_CS` -> ESP32-C3 Pad 9 / 11 -> RFID SDA/CS (Pin 8)
+* **Breakout/Unrouted Nets (Off-Board Connections)**:
+  + Net `BUZZER` -> ESP32-C3 Pad 4 (connects to external active buzzer)
+  + Net `DHT_DATA` -> ESP32-C3 Pad 14 / 19 (connects to external DHT22 sensor data line)
+  + Net `LED_GREEN` -> ESP32-C3 Pad 22 (connects to external green status LED)
+  + Net `LED_RED` -> ESP32-C3 Pad 23 (connects to external red status LED)
 
 ---
 
@@ -35,12 +33,12 @@ The schematic is designed using standard 0.1-inch header connectors for pluggabl
 
 | Designator | Qty | Value / Component | Package | Description | Reference Cost (INR) |
 | --- | --- | --- | --- | --- | --- |
-| **U1** | 1 | ESP32 DevKit v1 | DIP-30 (Pluggable) | Main Microcontroller Board | 350.00 |
-| **U2** | 1 | RC522 RFID Module | Header 1x8 | 13.56MHz RFID Reader board | 180.00 |
+| **U1** | 1 | ESP32-C3-DevKitM-1 | 30-Pin Module | Main micro-controller board | 200.00 |
+| **U2** | 1 | RC522 RFID Reader | Header 1x8 | 13.56MHz RFID Reader board | 180.00 |
 | **DISP1** | 1 | SSD1306 OLED (0.96") | Header 1x4 (I2C) | 128x64 pixels monochrome screen | 200.00 |
-| **SEN1** | 1 | DHT22 Sensor | SIP-4 | Temperature & Humidity Sensor | 220.00 |
-| **D1** | 1 | Green LED | T-1 3/4 (5mm) | Status LED: Accepted Scan | 5.00 |
-| **D2** | 1 | Red LED | T-1 3/4 (5mm) | Status LED: Anomaly/Error | 5.00 |
+| **SEN1** | 1 | DHT22 Sensor (ASAIR AM2302) | SIP-4 | Temperature & Humidity Sensor | 220.00 |
+| **D1** | 1 | Green LED | T-1 3/4 (5mm) | Status LED: Accepted Scan (wired) | 5.00 |
+| **D2** | 1 | Red LED | T-1 3/4 (5mm) | Status LED: Anomaly/Error (wired) | 5.00 |
 | **R1, R2** | 2 | 220 Ohm | Axial-0.25W | Current limiting resistors for LEDs | 2.00 |
 | **R3, R4** | 2 | 4.7k Ohm | Axial-0.25W | I2C SDA/SCL pull-up resistors | 2.00 |
 | **R5** | 1 | 10k Ohm | Axial-0.25W | DHT22 pull-up resistor | 1.00 |
@@ -49,15 +47,8 @@ The schematic is designed using standard 0.1-inch header connectors for pluggabl
 
 ---
 
-## 3. PCB Layout Guidelines
-* **Trace Width**: Power traces (`+5V`, `+3.3V`) should be routed with a minimum width of **0.5mm** (20 mils). Signals traces can be **0.254mm** (10 mils).
-* **Decoupling**: Place a **0.1uF bypass capacitor** close to the power pins of the OLED and RFID module connectors to filter line noise.
-* **Ground Planes**: Use a continuous ground pour on both the top and bottom copper layers (2-layer board design) to prevent signal loops and stabilize the ESP32's WiFi/Bluetooth antenna transmissions.
-
----
-
-## 4. Visual Layout Render
-
-Below is the PCB layout mockup generated for the Smart Relay Hub:
-
-![Smart Relay Hub PCB Layout Render](file:///C:/Users/mouli/.gemini/antigravity-ide/brain/d29bc1cd-6a5f-4263-8353-0f507c8aa48f/smart_hub_pcb_1780932123795.png)
+## 3. PCB Layout & Design Details
+* **Board Format**: Custom breakout shield. The layout is available in the KiCad v8 project files:
+  - KiCad PCB: [SmartRelayHub_v2.kicad_pcb](file:///c:/Users/lakshanya/OneDrive/Desktop/veri/VeriRoute_Nexus/hardware_submission/pcb/SmartRelayHub_v2.kicad_pcb)
+  - KiCad Project: [SmartRelayHub_v2.kicad_pro](file:///c:/Users/lakshanya/OneDrive/Desktop/veri/VeriRoute_Nexus/hardware_submission/pcb/SmartRelayHub_v2.kicad_pro)
+* **Ground Planes**: Continuous ground pour on both top and bottom copper layers (2-layer board design) to shield signals and stabilize wireless transmission.

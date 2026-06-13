@@ -6,24 +6,27 @@ This document details the mechanical design, box-mounting mechanisms, and printi
 
 ## 1. Mechanical Enclosure Specifications
 
-The Smart Parcel Tag enclosure is a highly compact, rugged rectangular box. It is designed to be mounted directly onto cardboard cargo boxes or medicine shipping containers.
+The Smart Parcel Tag enclosure is a highly compact, rugged rectangular box. The physical design files are provided as a high-fidelity 3D STEP model: [Smart_Parcel_Tag_closed.step](file:///c:/Users/lakshanya/OneDrive/Desktop/veri/VeriRoute_Nexus/hardware_submission/cad/Smart_Parcel_Tag_closed.step) (migrated from the legacy STL format). It is designed to be mounted directly onto cardboard cargo boxes or medicine shipping containers.
 
 * **Dimensions**:
-  + **Width**: 45 mm
-  + **Depth**: 35 mm
-  + **Height**: 18 mm (ultra-slim profile to avoid catching during conveyor handoffs)
+  + **Width (Body)**: 45.0 mm
+  + **Width (with Mounting Ears)**: 62.0 mm
+  + **Depth**: 35.0 mm
+  + **Height**: 18.0 mm (ultra-slim profile to avoid catching during conveyor handoffs)
 * **Wall Thickness**: 1.5 mm
-* **Material**: Matte Black PLA or Impact-Resistant ABS (to survive drops and shipping impacts)
-* **Mounting Method**: Double-sided adhesive tape channel or mounting clips on the bottom base.
+* **Material**: Matte Black ABS / Polycarbonate (to survive drops and shipping impacts)
+* **Mounting Method**: 4x M3 screw brackets (ears) at the bottom corners.
 
 ---
 
 ## 2. Designated Cutouts & Interfaces
 
-1. **Ventilation Slots**: Four 1.0mm wide slots over the DHT22 temperature sensor area to ensure direct airflow and accurate ambient measurements.
-2. **Tamper Limit Switch Cutout**: 5.0 mm x 3.0 mm slot on the bottom face allowing the physical limit switch arm to protrude. The switch arm is compressed against the shipping container when mounted. If the tag is removed, the switch triggers.
-3. **USB-C Charging Inlet**: 9.0 mm x 4.5 mm side opening for access to the ESP32-C3's charging port.
-4. **Onboard LED Lens**: 2.0mm circular guide on top filled with clear hot-glue to act as a lightpipe for the status LED.
+1. **Ventilation Slits**: 5x $12.0\text{ mm} \times 1.0\text{ mm}$ slits on the top cover directly over the DHT22 sensor to ensure direct airflow.
+2. **Tamper Limit Switch Cutout**: $5.0\text{ mm} \times 3.0\text{ mm}$ opening on the bottom face for the physical limit switch arm. The switch arm is compressed against the container surface when mounted.
+3. **USB-C Charging Inlet**: $9.0\text{ mm} \times 4.5\text{ mm}$ opening on the front wall with a protective rubber flap.
+4. **Reset Button Cutout**: 3.0 mm circular hole on the front wall.
+5. **Status LED Guide**: 2.0 mm circular lightpipe hole on the top cover.
+6. **Top Lid Fasteners**: 4x M2.5 threaded screw holes positioned at the top corners to secure the enclosure lid.
 
 ---
 
@@ -43,4 +46,4 @@ Configure the slicer with the following parameters:
 
 Below is the 3D CAD render of the Smart Parcel Tag enclosure design:
 
-![Smart Parcel Tag Enclosure CAD Render](file:///C:/Users/mouli/.gemini/antigravity-ide/brain/d29bc1cd-6a5f-4263-8353-0f507c8aa48f/smart_tag_enclosure_1780932174981.png)
+![Smart Parcel Tag Enclosure CAD Render](../documentation/images/tag_overview_render.png)

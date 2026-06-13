@@ -6,12 +6,14 @@ This document details the mechanical design, 3D printing parameters, and assembl
 
 ## 1. Mechanical Enclosure Specifications
 
-The Smart Relay Hub housing is designed as a desktop-friendly, wedge-shaped console enclosure. It features distinct cutouts for the user interface components (OLED, LEDs, button) and has mounting slots for the internally-positioned RFID reader and ESP32 board.
+The Smart Relay Hub housing is designed as an ergonomic desktop-friendly, wedge-shaped console enclosure. The physical design files are provided as a high-fidelity 3D STEP model: [Smart_Relay_Hub_closed.step](file:///c:/Users/lakshanya/OneDrive/Desktop/veri/VeriRoute_Nexus/hardware_submission/cad/Smart_Relay_Hub_closed.step) (migrated from the legacy STL format). It features distinct cutouts for the user interface components (OLED, LEDs, button) and has mounting slots for the internally-positioned RFID reader and ESP32 board.
 
 * **Dimensions**:
-  + **Width**: 110 mm
-  + **Depth**: 85 mm
-  + **Height (slope range)**: 25 mm (front) to 45 mm (rear)
+  + **Width**: 110.0 mm
+  + **Depth**: 80.0 mm
+  + **Height (Rear Wall)**: 55.0 mm
+  + **Height (Front Lip)**: 25.0 mm
+  + **Slope Angle**: 35°
 * **Wall Thickness**: 2.0 mm (provides structural rigidity while saving filament)
 * **Material Selection**:
   + **Matte Black or Dark Grey PLA/PETG** (for the main chassis)
@@ -22,12 +24,12 @@ The Smart Relay Hub housing is designed as a desktop-friendly, wedge-shaped cons
 
 ## 2. Designated Cutouts & Interfaces
 
-1. **OLED Screen Window**: 25.5 mm x 14.5 mm rectangular slot centered on the sloped top face.
-2. **LED Indicators**: Two 5.2 mm circular holes spaced 15mm apart below the OLED screen.
-3. **RFID Scan Zone**: Engraved symbol on the flat lower face indicating the sweep zone for RFID tags.
-4. **Push Button Port**: 6.2 mm circular hole on the right side of the sloped face for the tactile push button.
-5. **Power Cable Inlet**: 12.0 mm x 6.5 mm slot on the rear panel aligned with the ESP32’s micro-USB programming port.
-6. **Buzzer Vent**: Small grille matrix (six 1.5mm holes) on the side to facilitate clear alarm sound propagation.
+1. **OLED Screen Cutout**: $26.0\text{ mm} \times 15.0\text{ mm}$ rectangular window centered on the sloped top face.
+2. **LED Indicators**: 2x 5.2 mm circular holes, stacked vertically, labeled `STATUS` (Green LED top, Red LED below).
+3. **RFID Card Slot**: $40.0\text{ mm} \times 3.0\text{ mm}$ vertical slot on the left side of the sloped face.
+4. **Reset/Tactile Button Cutout**: 10.2 mm circular hole placed below the LEDs.
+5. **Power Cable Inlet**: $12.0\text{ mm} \times 6.5\text{ mm}$ slot located on the bottom-right front lip.
+6. **Buzzer Vent**: Small grille matrix (19x 1.5mm holes in a circular matrix) on the right side of the sloped face.
 
 ---
 
@@ -47,4 +49,4 @@ To print a high-quality, professional shell on a standard FDM printer (e.g. Ende
 
 Below is the 3D CAD render of the Smart Relay Hub enclosure design:
 
-![Smart Relay Hub Enclosure CAD Render](file:///C:/Users/mouli/.gemini/antigravity-ide/brain/d29bc1cd-6a5f-4263-8353-0f507c8aa48f/smart_hub_enclosure_1780932157836.png)
+![Smart Relay Hub Enclosure CAD Render](../documentation/images/hub_front_view_render_1780936017575.png)

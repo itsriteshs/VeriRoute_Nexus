@@ -1,6 +1,6 @@
 # Smart Relay Hub CAD Enclosure Specification
 
-This document details the mechanical design, orthographic views, and approximate physical dimensions of the **Smart Relay Hub** sloped desktop console enclosure, corresponding to the reference design.
+This document details the mechanical design, orthographic views, and approximate physical dimensions of the **Smart Relay Hub** sloped desktop console enclosure, corresponding to the reference design. The source design is available as a high-fidelity 3D STEP model: [Smart_Relay_Hub_closed.step](../cad/Smart_Relay_Hub_closed.step).
 
 ---
 
