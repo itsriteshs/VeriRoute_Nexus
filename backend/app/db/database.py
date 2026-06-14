@@ -1,12 +1,14 @@
 # Owner: Person 1 — Backend + Algorithms Lead
 # Purpose: SQLite database session setup.
 
+import os
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./packetflow.db"
+DEFAULT_DB_PATH = "/tmp/packetflow.db" if os.getenv("VERCEL") else "./packetflow.db"
+SQLALCHEMY_DATABASE_URL = os.getenv("PACKETFLOW_DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,

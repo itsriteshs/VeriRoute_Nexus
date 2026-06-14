@@ -1,9 +1,27 @@
 // Owner: Person 2 — Frontend + Digital Twin + UX Lead
 // Purpose: WebSocket manager with reconnection backoff and status callbacks.
 
-export const WS_URL = (import.meta.env.VITE_WS_URL as string) || 'ws://localhost:8000/ws';
+function defaultWsUrl() {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/api/ws`;
+  }
+  return 'ws://localhost:8000/ws';
+}
+
+export const WS_URL = (import.meta.env.VITE_WS_URL as string) || defaultWsUrl();
 
 export type SocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
+
+export function shouldUseWebSocket() {
+  if (import.meta.env.VITE_WS_URL) {
+    return true;
+  }
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+}
 
 export class PacketFlowSocket {
   private socket: WebSocket | null = null;

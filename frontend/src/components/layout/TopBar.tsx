@@ -12,6 +12,18 @@ export default function TopBar({ demo }: TopBarProps) {
   const backendMode = demo?.backendMode || 'mock';
   const websocketStatus = demo?.websocketStatus || 'disconnected';
   const lastEvent = demo?.lastEvent || 'None';
+  const isLiveBackend = backendMode === 'live';
+  const isSocketConnected = websocketStatus === 'connected';
+  const liveSyncLabel = isSocketConnected
+    ? 'Live Sync: WebSocket'
+    : isLiveBackend
+    ? 'Live Sync: Polling'
+    : websocketStatus === 'connecting'
+    ? 'Live Sync: Connecting'
+    : websocketStatus === 'error'
+    ? 'Live Sync: Retrying'
+    : 'Live Sync: Local';
+  const liveSyncTone = isSocketConnected || isLiveBackend ? 'primary' : websocketStatus === 'connecting' ? 'warning' : 'muted';
 
   const isHardwareEvent =
     lastEvent.includes('hardware') ||
@@ -34,24 +46,7 @@ export default function TopBar({ demo }: TopBarProps) {
             label={backendMode === 'live' ? 'Backend: Live' : 'Backend: Mock'}
             tone={backendMode === 'live' ? 'primary' : 'warning'}
           />
-          <StatusBadge
-            label={
-              websocketStatus === 'connected'
-                ? 'WebSocket: Connected'
-                : websocketStatus === 'connecting'
-                ? 'WebSocket: Reconnecting'
-                : websocketStatus === 'error'
-                ? 'WebSocket: Error'
-                : 'WebSocket: Offline'
-            }
-            tone={
-              websocketStatus === 'connected'
-                ? 'primary'
-                : websocketStatus === 'connecting'
-                ? 'warning'
-                : 'muted'
-            }
-          />
+          <StatusBadge label={liveSyncLabel} tone={liveSyncTone} />
           <StatusBadge label={hardwareLabel} tone={hardwareTone} />
         </div>
         {demo?.syncBackend && (

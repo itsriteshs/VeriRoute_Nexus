@@ -1,0 +1,18 @@
+{
+  "experimentalServices": {
+    "frontend": {
+      "entrypoint": "frontend",
+      "routePrefix": "/",
+      "framework": "vite"
+    },
+    "api": {
+      "entrypoint": "backend/app/main.py",
+      "routePrefix": "/api",
+      "framework": "fastapi",
+      "includeFiles": [
+        "backend/app/**",
+        "backend/pyproject.toml"
+      ]
+    }
+  }
+}

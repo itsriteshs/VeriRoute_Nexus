@@ -15,3 +15,5 @@ packetflow.db
 skills-lock.json
 person1_zuup.txt
 .history/
+.vercel
+.env*

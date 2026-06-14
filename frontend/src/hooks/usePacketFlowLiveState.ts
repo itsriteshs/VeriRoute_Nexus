@@ -18,7 +18,7 @@ import {
   mapBackendMetrics,
   mapBackendImpactMetrics,
 } from '../api/mappers';
-import type { SocketStatus } from '../api/websocket';
+import { shouldUseWebSocket, type SocketStatus } from '../api/websocket';
 import type { DemoState } from './useDemoState';
 
 export type LiveDemoState = DemoState & {
@@ -195,7 +195,7 @@ export function usePacketFlowLiveState(): LiveDemoState {
   }, [currentWsStatus]);
 
   useEffect(() => {
-    if (backendMode === 'live') {
+    if (backendMode === 'live' && shouldUseWebSocket()) {
       connect();
     } else {
       disconnect();
@@ -205,7 +205,7 @@ export function usePacketFlowLiveState(): LiveDemoState {
 
   useEffect(() => {
     let interval: number | null = null;
-    if (backendMode === 'live' && wsStatus !== 'connected') {
+    if (backendMode === 'live' && (!shouldUseWebSocket() || wsStatus !== 'connected')) {
       interval = window.setInterval(() => {
         syncBackend();
       }, 2000);

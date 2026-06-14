@@ -1,7 +1,14 @@
 // Owner: Person 2 — Frontend + Digital Twin + UX Lead
 // Purpose: Typed HTTP API client helpers.
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000';
+function defaultApiBaseUrl() {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return '/api';
+  }
+  return 'http://localhost:8000';
+}
+
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || defaultApiBaseUrl();
 
 export async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${path}`;

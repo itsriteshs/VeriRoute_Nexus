@@ -1,0 +1,15 @@
+[project]
+name = "packetflow-immunenet-backend"
+version = "1.0.0"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "websockets",
+  "pydantic",
+  "networkx",
+  "python-dotenv",
+  "sqlalchemy",
+  "aiosqlite",
+  "paho-mqtt",
+]

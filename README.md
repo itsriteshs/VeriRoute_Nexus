@@ -54,7 +54,30 @@ npm run typecheck
 npm run build
 ```
 
-More detail: [Demo Guide](docs/DEMO_GUIDE.md), [API Reference](docs/API.md), [Verification Log](docs/VERIFICATION_LOG.md), and [Submission Checklist](docs/SUBMISSION_CHECKLIST.md).
+More detail: [Demo Guide](docs/DEMO_GUIDE.md) and [API Reference](docs/API.md).
+
+## Live Deployment
+
+Full deployment:
+
+```text
+https://packetflow-immunenet.vercel.app
+```
+
+This Vercel deployment serves both the React/Vite dashboard and the FastAPI backend:
+
+- Frontend: `https://packetflow-immunenet.vercel.app/dashboard`
+- Backend health: `https://packetflow-immunenet.vercel.app/api/health`
+- Backend docs are still available locally at `http://localhost:8000/docs`; the Vercel demo exposes the API routes under `/api`.
+
+The hosted backend uses Vercel Services and an ephemeral SQLite database in `/tmp`. That is enough for a live hackathon demo with reset/seed flows, but production should move state to Postgres or another managed database.
+
+Deploy commands:
+
+```bash
+vercel pull --yes --environment=preview
+vercel deploy --prod
+```
 
 ## 30-Second Explanation
 
@@ -148,7 +171,7 @@ More detail: [Architecture](docs/ARCHITECTURE.md).
 | Demo Scenario Controls | Frontend and scripts trigger reset, scan, reroute, fake scan, breach, and hardware paths. |
 | Explainable Decision Panel | Backend returns reasons and candidate score breakdowns for judge-readable decisions. |
 
-More detail: [Feature Status](docs/FEATURE_STATUS.md) and [Naming And Positioning](docs/NAMING_AND_POSITIONING.md).
+More detail: [Feature Status](docs/FEATURE_STATUS.md).
 
 ## Demo Scenarios
 
@@ -303,7 +326,7 @@ PROJECT_STATUS.md     Current project status notes
 what_is_done_*.md     Team member progress trackers
 ```
 
-The root also contains team workflow and integration notes such as `TEAM_WORKFLOW.md`, `INTEGRATION_CHECKLIST.md`, `PRIVACY_AND_TRUST.md`, and `CONTRIBUTING.md`. These are supporting documents; the fastest judge path is this README plus [Documentation Index](docs/INDEX.md).
+The root also contains team workflow and integration notes such as `TEAM_WORKFLOW.md`, `INTEGRATION_CHECKLIST.md`, `PRIVACY_AND_TRUST.md`, and `CONTRIBUTING.md`. These are supporting documents; the fastest judge path is this README plus the focused files in `docs/`.
 
 ## Screenshots
 
@@ -322,7 +345,7 @@ See [Screenshots To Add](docs/screenshots/README.md) for the screenshot capture 
 
 PacketFlow ImmuneNet can start as a campus or warehouse pilot, then expand to a city micro-hub network, multi-carrier parcel exchange, ONDC/e-commerce logistics, pharma/cold-chain compliance, disaster relief routing, and cross-border checkpoint logistics. The protocol concept scales because it separates proof ingestion, movement validation, hub trust, and routing decisions.
 
-More detail: [Judge Evaluation](docs/JUDGE_EVALUATION.md) and [Repository Audit](docs/REPO_AUDIT.md).
+More detail: [Simulation](docs/SIMULATION.md) and [Architecture](docs/ARCHITECTURE.md).
 
 ## Privacy And Safety
 
@@ -330,17 +353,12 @@ The system verifies logistics events, not workers or customers continuously. It 
 
 ## More Docs
 
-- [Documentation Index](docs/INDEX.md)
-- [Repository Audit](docs/REPO_AUDIT.md)
-- [Judge Evaluation](docs/JUDGE_EVALUATION.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [API Reference](docs/API.md)
 - [Demo Guide](docs/DEMO_GUIDE.md)
 - [Simulation](docs/SIMULATION.md)
 - [Hardware](docs/HARDWARE.md)
 - [Feature Status](docs/FEATURE_STATUS.md)
-- [Verification Log](docs/VERIFICATION_LOG.md)
-- [Submission Checklist](docs/SUBMISSION_CHECKLIST.md)
-- [Naming And Positioning](docs/NAMING_AND_POSITIONING.md)
+- [Screenshots To Add](docs/screenshots/README.md)
 
 **We are not tracking parcels. We are proving movement.**

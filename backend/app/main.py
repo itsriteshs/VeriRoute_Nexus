@@ -5,7 +5,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.websocket_manager import websocket_manager
-from app.db.database import init_db
+from app.db.database import SessionLocal, init_db
+from app.db.models import Hub
+from app.db.seed_data import seed_demo_data
 from app.routes import (
     demo,
     edges,
@@ -26,6 +28,9 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    with SessionLocal() as db:
+        if db.query(Hub).count() == 0:
+            seed_demo_data(db)
     yield
 
 app = FastAPI(title="PacketFlow ImmuneNet Backend", version="1.0", lifespan=lifespan)
