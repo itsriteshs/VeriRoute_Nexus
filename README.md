@@ -1,42 +1,28 @@
-# VeriRoute Nexus
+# PacketFlow ImmuneNet
 
-**Team:** Aristotle
-**Tagline:** Proof-powered routing for trusted logistics.
+**TCP/IP for parcels, with an immune system for trust.**
 
-VeriRoute Nexus verifies every parcel handoff before routing continues. It combines PacketFlow routing, Proof-of-Movement verification, ImmuneNet anomaly detection, AgentOps disruption response, SwarmFlow Smart Relay Hub hardware, and a Digital Twin command center.
+PacketFlow ImmuneNet is a trust-aware logistics protocol for FAR AWAY 2026 Round 1. Modern logistics systems often track claims that a parcel moved. PacketFlow ImmuneNet verifies whether each movement could physically have happened using scan identity, GPS/geofence proof, timestamp and speed plausibility, route graph validity, temperature state, tamper state, hub trust, and live rerouting.
 
-## System Layers
+The MVP combines a FastAPI backend, a React/Vite digital twin dashboard, deterministic simulation scenarios, an event ledger, WebSocket live updates, and SmartHub hardware-ready ESP32 assets. The project started as VeriRoute Nexus; the submission-facing product name is **PacketFlow ImmuneNet**.
 
-| Layer | Purpose | Owner |
-| --- | --- | --- |
-| PacketFlow | Dynamic next-hop routing for parcels | Person 1 |
-| Proof-of-Movement | GPS/geofence + identity + sensor verification for handoffs | Person 1 + Person 3 |
-| ImmuneNet | Fake scan, clone scan, impossible movement, cold-chain, and tamper detection | Person 1 |
-| AgentOps | Autonomous disruption response and rerouting | Person 1 + Person 2 |
-| SwarmFlow | ESP32/RFID/QR/GPS/temperature/LED proof layer | Person 3 |
-| Digital Twin | Hubs, parcels, trust, reroutes, alerts, and metrics UI | Person 2 |
+Final line: **We are not tracking parcels. We are proving movement.**
 
-## Ownership
+## Run Locally
 
-| Person | Role | Folders | Progress File |
-| --- | --- | --- | --- |
-| Person 1 | Backend + Algorithms Lead | `backend/`, API contracts, demo data | `what_is_done_person_1.md` |
-| Person 2 | Frontend + Digital Twin + UX Lead | `frontend/` | `what_is_done_person_2.md` |
-| Person 3 | Hardware + Demo + Presentation Lead | `hardware/`, `presentation/` | `what_is_done_person_3.md` |
+Use two terminals.
 
-## Quick Start
-
-Backend start command:
+Terminal 1, backend:
 
 ```bash
 cd backend
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ./run.sh
 ```
 
-Frontend start command:
+Terminal 2, frontend:
 
 ```bash
 cd frontend
@@ -44,145 +30,317 @@ npm install
 npm run dev
 ```
 
-The `hardware/` folder contains ESP32 firmware placeholders, bridge scripts, pin maps, QR payloads, CAD placeholders, and PCB/story notes.
-
-## Demo Flow
-
-Reset demo, create `MED-104`, scan at `HUB-A`, show PacketFlow route and score breakdown, fail or overload `HUB-B`, show AgentOps reroute, inject fake scan, show ImmuneNet block and trust decay, trigger temperature breach, show cold-chain reroute, then show impact metrics.
-
-Final line: **We are not tracking parcels. We are proving movement.**
-
-## Repository Structure
-
-- `backend/`: FastAPI starter, schemas, engines, routes, tests.
-- `frontend/`: React/Vite starter Digital Twin.
-- `hardware/`: Smart Relay Hub firmware and bridge placeholders.
-- `data/`: Demo hubs, edges, parcels, and scenarios.
-- `docs/`: Architecture, contracts, planning, research, and assets.
-- `presentation/`: Slides, scripts, judge Q&A, screenshots, and fallback plan.
-- `.github/`: Pull request and issue templates.
-
-## Integration Rule
-
-All API contracts must be updated in `API_CONTRACT.md` before implementation changes. Any PR changing request payloads, response payloads, WebSocket events, or demo data shape must mention the contract update.
-
-## Future Phase: Hardware Integration
-
-Person 3's upgraded hardware plan is a Dual-Node SwarmFlow Relay Network with physical `HUB-A` and `HUB-B` SmartHub nodes, an ESP-NOW peer-to-peer handshake path, and an ESP32-C3 BLE Smart Parcel Tag. The backend now exposes direct hardware scan and peer-to-peer handshake endpoints for rehearsal.
-
-- `POST /hardware/scan` accepts device-native fields from `hardware_submission`: `device_id`, `button_pressed`, flat `lat`/`lng`, optional BLE fields, and optional ESP-NOW cache fields.
-- If GPS is missing, `POST /hardware/scan` returns `requires_gps: true` plus `/scan/{hub_id}?parcel_id=...` for the phone GPS handoff.
-- `POST /hardware/p2p-handshake` logs `p2p_handshake` events between `HUB-A` and `HUB-B`.
-
-The event ledger stores `event_type` as text and `raw_payload` as JSON text so ESP-NOW/BLE metadata can be recorded without changing `GET /ledger/events`.
-
-## Phase 2: PacketFlow Routing
-
-PacketFlow routing is implemented as a deterministic next-hop decision layer. It scores active candidate routes using SLA risk, candidate congestion, hub trust risk, condition/cold-chain risk, and cost/emission score:
+Open:
 
 ```text
-0.30 * sla_risk + 0.25 * congestion_risk + 0.20 * trust_risk + 0.15 * condition_risk + 0.10 * cost_emission_score
+http://localhost:5173/dashboard
 ```
 
-For the seeded `MED-104` parcel at `HUB-A`, `POST /route/next-hop` selects `HUB-B` and returns the route `HUB-A -> HUB-B -> HUB-E -> CUSTOMER-ZONE`. Phase 2 does not implement scan validation, trust decay, AgentOps, WebSockets, hardware scan, ESP-NOW endpoints, BLE parsing, fake scan, clone scan, or temperature breach flows.
-
-## Phase 3 + 4: ImmuneNet Scan Validation And Trust
-
-ImmuneNet validates every scan as a movement claim using geofence, speed plausibility, route graph, clone scan, cold-chain, and tamper checks. The trust engine updates hub trust after each scan and records trust history. Accepted and rerouted scans recalculate PacketFlow routes.
-
-Demo commands:
+Reset the demo:
 
 ```bash
-curl -X POST http://localhost:8000/demo/seed
-
-curl -X POST http://localhost:8000/scan \
-  -H "Content-Type: application/json" \
-  -d '{"parcel_id":"MED-104","hub_id":"HUB-A","scanner_id":"SCANNER-07","rfid_verified":true,"qr_verified":true,"gps":{"lat":11.0168,"lng":76.9558,"accuracy_m":18},"temperature_c":24.3,"carrier_type":"van","tamper":false}'
-
-curl -X POST http://localhost:8000/scan/fake \
-  -H "Content-Type: application/json" \
-  -d '{"parcel_id":"MED-104","claimed_hub":"HUB-C","fake_gps":{"lat":11.1000,"lng":77.1000,"accuracy_m":20}}'
-
-curl -X POST http://localhost:8000/scan/clone \
-  -H "Content-Type: application/json" \
-  -d '{"parcel_id":"MED-104","first_hub":"HUB-B","second_hub":"HUB-D"}'
-
-curl -X POST http://localhost:8000/scan/tamper \
-  -H "Content-Type: application/json" \
-  -d '{"parcel_id":"MED-104","hub_id":"HUB-C","tamper":true}'
-
-curl -X POST http://localhost:8000/scan \
-  -H "Content-Type: application/json" \
-  -d '{"parcel_id":"MED-104","hub_id":"HUB-A","scanner_id":"SCANNER-07","rfid_verified":true,"qr_verified":true,"gps":{"lat":11.0168,"lng":76.9558,"accuracy_m":18},"temperature_c":29.2,"carrier_type":"van","tamper":false}'
-
-curl http://localhost:8000/trust/hubs
-curl http://localhost:8000/trust/history/HUB-C
-curl http://localhost:8000/ledger/events
-curl http://localhost:8000/metrics
+curl -X POST http://localhost:8000/demo/reset
 ```
 
-Expected demo behavior: valid scan returns `ACCEPTED` and `GREEN`; fake scan returns `BLOCKED` and `RED`; clone scan returns `BLOCKED` with `clone_scan`; tamper scan returns `HOLD`; hot cold-chain scan returns `REROUTED` and `AMBER`.
+Run verification:
 
-## Phase 5 + 6: WebSocket Live Broadcasting & AgentOps Scenario Engine
-
-FastAPI WebSocket connection manages live real-time events on `ws://localhost:8000/ws`.
-
-### WebSocket Message Envelope Format
-```json
-{
-  "type": "event_type_here",
-  "timestamp": "2026-06-08T10:42:00Z",
-  "payload": {}
-}
-```
-
-### Scenario APIs
-AgentOps handles autonomous routing replans and logs disruptions under five simulated disaster scenarios:
-
-* **Fail Hub** (`POST /scenario/fail-hub`): Avoids the failed hub.
-* **Overload Hub** (`POST /scenario/overload-hub`): Shifts candidate routing risk away from the overloaded hub.
-* **Traffic Jam** (`POST /scenario/traffic-jam`): Increases routing ETA for affected edges.
-* **Weather Risk** (`POST /scenario/weather-risk`): Increases edge weather risk and condition risk for sensitive parcels.
-* **Temperature Breach** (`POST /scenario/temp-breach`): Triggers temperature breach alerts and reroutes parcels to cold-chain hubs.
-
-### Curl Commands
 ```bash
-# Overload HUB-B
-curl -X POST http://localhost:8000/scenario/overload-hub \
-  -H "Content-Type: application/json" \
-  -d '{"hub_id":"HUB-B","parcel_id":"MED-104","congestion":0.95}'
+cd backend
+source .venv/bin/activate
+pytest
 
-# Fail HUB-B
-curl -X POST http://localhost:8000/scenario/fail-hub \
-  -H "Content-Type: application/json" \
-  -d '{"hub_id":"HUB-B","parcel_id":"MED-104"}'
-
-# Traffic jam HUB-B -> HUB-E
-curl -X POST http://localhost:8000/scenario/traffic-jam \
-  -H "Content-Type: application/json" \
-  -d '{"from_hub":"HUB-B","to_hub":"HUB-E","parcel_id":"MED-104","traffic_risk":0.95}'
-
-# Weather risk HUB-B -> HUB-E
-curl -X POST http://localhost:8000/scenario/weather-risk \
-  -H "Content-Type: application/json" \
-  -d '{"from_hub":"HUB-B","to_hub":"HUB-E","parcel_id":"MED-104","weather_risk":0.90}'
-
-# Temperature breach MED-104
-curl -X POST http://localhost:8000/scenario/temp-breach \
-  -H "Content-Type: application/json" \
-  -d '{"parcel_id":"MED-104","hub_id":"HUB-A","temperature_c":29.2}'
+cd ../frontend
+npm run typecheck
+npm run build
 ```
 
-### Python WebSocket Tester
-Use the following snippet to subscribe to the live stream:
-```python
-import asyncio, websockets, json
-async def main():
-    async with websockets.connect("ws://localhost:8000/ws") as ws:
-        print("Connected to VeriRoute WS")
-        while True:
-            print(json.dumps(json.loads(await ws.recv()), indent=2))
-asyncio.run(main())
+More detail: [Demo Guide](docs/DEMO_GUIDE.md), [API Reference](docs/API.md), [Verification Log](docs/VERIFICATION_LOG.md), and [Submission Checklist](docs/SUBMISSION_CHECKLIST.md).
+
+## 30-Second Explanation
+
+Logistics networks break when scans are trusted blindly. A fake scan, impossible travel speed, wrong geofence, cold-chain breach, or tampered package can make a dashboard look normal while the parcel is compromised. PacketFlow ImmuneNet treats each scan as a movement claim. Proof-of-Movement validates the claim, ImmuneNet blocks or warns on anomalies, the trust ledger updates hub reputation, and PacketFlow chooses the next route based on trust, congestion, SLA, cold-chain needs, cost, and disruption state.
+
+## Problem
+
+- Rigid route plans fail when hubs are overloaded, blocked, or unsafe.
+- Tracking systems often record a scan without proving the scanner was physically near the hub.
+- Fake scans, clone scans, and impossible movement can pass as normal status updates.
+- Cold-chain parcels need temperature-aware routing, not only location updates.
+- Logistics networks need hub-level trust scores and auditable proof, not only carrier claims.
+
+## Solution
+
+- **PacketFlow Routing Engine:** dynamic next-hop routing over a hub graph.
+- **Proof-of-Movement Ledger:** hash-linked event ledger for accepted, blocked, and rerouted movement claims.
+- **ImmuneNet Anomaly Engine:** geofence, speed, graph, clone, cold-chain, tamper, handshake, mesh witness, and statistical checks.
+- **AgentOps Disruption Replanner:** deterministic scenario handlers for hub failure, overload, traffic, weather, and temperature breach.
+- **SwarmFlow Digital Twin:** React dashboard for route decisions, trust, alerts, metrics, and live events.
+- **SmartHub Relay Node:** ESP32/RFID/QR/GPS/temperature/BLE/ESP-NOW-ready hardware layer and simulator.
+
+## Real Vs Simulated
+
+| Boundary | What is included |
+| --- | --- |
+| Real in MVP | FastAPI endpoints; SQLite/SQLAlchemy state; PacketFlow route scoring; ImmuneNet scan validation; trust updates; ledger hashing; WebSocket broadcasts; React dashboard pages; demo reset/seed/snapshot; hardware scan bridge endpoint. |
+| Simulated in MVP | Hub graph, parcel movement scenarios, traffic/weather/hub disruption inputs, digital twin map layout, hardware simulator actions, demo data for `MED-104`. |
+| Hardware-ready | ESP32 Smart Relay Hub firmware, Smart Parcel Tag firmware, RFID/QR/GPS/temperature/BLE payload shape, ESP-NOW handshake endpoint, CAD/PCB/pin-map documentation, Python hardware simulator. |
+| Future roadmap | Real multi-site deployment, production identity provisioning, carrier integrations, secure device keys, real GPS permission flows at scale, ONDC/e-commerce integration, hosted observability, production auth, and multi-tenant fleet operations. |
+
+More detail: [Feature Status](docs/FEATURE_STATUS.md), [Hardware](docs/HARDWARE.md), and [Simulation](docs/SIMULATION.md).
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Dashboard[Frontend Dashboard\nReact/Vite Digital Twin]
+  ScanPage[Scan Page\nQR/RFID/manual input]
+  Twin[SwarmFlow Digital Twin]
+  API[FastAPI Backend]
+  PacketFlow[PacketFlow Routing Engine]
+  ImmuneNet[ImmuneNet Anomaly Engine]
+  Ledger[(Trust Ledger\nSQLite + hash chain)]
+  WS[WebSocket Live Updates]
+  Hardware[SmartHub / ESP32 Layer\nRFID, QR, temp, BLE, ESP-NOW]
+  Sim[Simulation Scenario Engine]
+  Explain[Optional deterministic explanation layer]
+
+  Dashboard --> API
+  ScanPage --> API
+  Twin --> API
+  Hardware --> API
+  Sim --> API
+  API --> PacketFlow
+  API --> ImmuneNet
+  PacketFlow --> Ledger
+  ImmuneNet --> Ledger
+  API --> WS
+  WS --> Dashboard
+  API --> Explain
 ```
 
-Phase 7 will implement hardware scan integration next.
+More detail: [Architecture](docs/ARCHITECTURE.md).
+
+## System Flow
+
+1. Parcel is created or seeded as `MED-104`.
+2. Scan event is submitted from the dashboard, scan page, demo control, or hardware bridge.
+3. Proof-of-Movement validates identity, geofence, timestamp/speed plausibility, route graph, temperature, tamper, and optional hardware context.
+4. ImmuneNet returns `ACCEPTED`, `WARNING`, `BLOCKED`, `REROUTED`, or `HOLD`.
+5. Hub trust score changes and trust history is stored.
+6. PacketFlow recalculates route decisions from the current hub.
+7. WebSocket broadcasts update the dashboard.
+8. Ledger entry is persisted with hash-chain fields.
+9. The system accepts, reroutes, blocks, or holds the movement claim.
+
+## Features
+
+| Group | MVP behavior |
+| --- | --- |
+| PacketFlow Routing Engine | Scores candidate next hops using SLA risk, congestion, trust risk, condition/cold-chain risk, and cost/emission. |
+| Proof-of-Movement Scan Validation | Treats every scan as a movement claim and verifies physical plausibility. |
+| ImmuneNet Anomaly Engine | Blocks fake scans, clone scans, impossible graph moves, and suspicious geofence/speed failures. |
+| AgentOps Disruption Replanner | Replans routes for hub failure, overload, traffic jam, weather risk, and temperature breach scenarios. |
+| SwarmFlow Digital Twin | Shows hubs, route path, parcels, alerts, ledger, trust board, and demo controls. |
+| Hub Trust Ledger | Stores event history, route decisions, trust score deltas, and ledger hashes. |
+| Cold-Chain Breach Handling | Detects hot medicine parcel conditions and prefers cold-chain routing such as `COLD-HUB-C`. |
+| Fake Scan / Impossible Movement Blocking | Provides explicit fake, clone, route, and speed scenarios. |
+| SmartHub Hardware Interface | Accepts ESP32-native scan payloads and peer handshakes through `/hardware/*`. |
+| Demo Scenario Controls | Frontend and scripts trigger reset, scan, reroute, fake scan, breach, and hardware paths. |
+| Explainable Decision Panel | Backend returns reasons and candidate score breakdowns for judge-readable decisions. |
+
+More detail: [Feature Status](docs/FEATURE_STATUS.md) and [Naming And Positioning](docs/NAMING_AND_POSITIONING.md).
+
+## Demo Scenarios
+
+| Scenario | How to demonstrate |
+| --- | --- |
+| Normal medicine parcel route | Reset demo, create or seed `MED-104`, submit valid `HUB-A` scan, show `ACCEPTED`, green LED, route decision, and ledger entry. |
+| Hub overload reroute | Trigger `POST /scenario/overload-hub` or dashboard overload control, then show AgentOps reroute and updated candidate scores. |
+| Fake scan from wrong location | Trigger `POST /scan/fake`, show `BLOCKED`, `fake_scan_blocked`, trust decay, and red alert. |
+| Impossible movement / speed violation | Submit scans too close in time across distant hubs or use clone scenario; show speed/clone failure. |
+| Cold-chain breach reroute | Trigger `POST /scenario/temp-breach` with temperature above limit; show cold-chain alert and route via cold-capable hubs. |
+| Trust score decay | Run fake/tamper/blocked events and open Trust Board or `/trust/history/HUB-C`. |
+| AgentOps disruption replanning | Trigger fail hub, traffic jam, or weather risk scenario and show old route vs new route. |
+| Fixed-route comparison vs PacketFlow | Use route decision candidate scores to explain why dynamic routing avoids unsafe or overloaded paths. |
+
+More detail: [Demo Guide](docs/DEMO_GUIDE.md).
+
+## API Routes
+
+The backend is FastAPI and the following table is generated from the actual route modules in `backend/app/routes`. More request/response examples are in [API Reference](docs/API.md).
+
+| Method | Path | Purpose | Request body example | Response example | Used by |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/health` | Health check | None | `{"status":"ok"}` | Frontend, smoke checks |
+| GET | `/ready` | Readiness with dependency checks | None | `{"status":"ready"}` | Operators |
+| POST | `/demo/seed` | Seed deterministic demo state | None | `{"status":"seeded"}` | Demo |
+| POST | `/demo/reset` | Reset demo database state | None | `{"status":"seeded"}` | Demo, scripts |
+| GET | `/demo/snapshot` | Return dashboard state bundle | None | hubs, edges, parcel, latest route, metrics | Frontend |
+| POST | `/demo/validate` | Run backend demo validation | `{}` | validation result | Demo |
+| POST | `/demo/run/main-wow` | Run scripted demo sequence | `{}` | scenario summary | Demo |
+| POST | `/demo/toggle-sync` | Toggle offline sync simulation | `{}` | sync status | Demo |
+| POST | `/demo/flush-sync` | Mark unsynced events synced | `{}` | flush count | Demo |
+| GET | `/hubs` | List hub graph nodes | None | `{"hubs":[...]}` | Frontend |
+| GET | `/edges` | List graph edges | None | `{"edges":[...]}` | Frontend |
+| POST | `/parcels` | Create/upsert parcel and initial route | `{"id":"MED-104","source_hub":"HUB-A"}` | parcel and initial route | Frontend/demo |
+| GET | `/parcels` | List parcels | None | `{"parcels":[...]}` | Frontend |
+| GET | `/parcels/{parcel_id}` | Parcel detail and latest events | None | parcel, latest events | Frontend |
+| GET | `/ledger/events` | List event ledger, optional filters | Query params | `{"events":[...]}` | Frontend/demo |
+| GET | `/ledger/parcel/{parcel_id}` | Parcel-specific ledger and proof context | None | events, route, trust, immune checks | Frontend |
+| GET | `/ledger/verify/{parcel_id}` | Verify event hash chain | None | validity summary | Frontend/demo |
+| GET | `/metrics` | Return demo impact metrics | None | metric counters | Frontend |
+| POST | `/route/next-hop` | Calculate PacketFlow next hop | `{"parcel_id":"MED-104","current_hub":"HUB-A"}` | route decision | Frontend/demo |
+| GET | `/route/decisions` | List route decisions | None | route history | Demo/docs |
+| GET | `/route/decisions/{parcel_id}` | List route decisions for parcel | None | route history | Demo/docs |
+| GET | `/route/{parcel_id}` | Latest route for parcel | None | route decision | Frontend |
+| POST | `/scan` | Submit movement claim | `{"parcel_id":"MED-104","hub_id":"HUB-A","gps":{"lat":11.0168,"lng":76.9558}}` | scan decision | Frontend/demo |
+| POST | `/scan/fake` | Simulate fake scan | `{"parcel_id":"MED-104","claimed_hub":"HUB-C","fake_gps":{"lat":11.1,"lng":77.1}}` | blocked decision | Demo |
+| POST | `/scan/clone` | Simulate clone scan | `{"parcel_id":"MED-104","first_hub":"HUB-B","second_hub":"HUB-D"}` | blocked decision | Demo |
+| POST | `/scan/tamper` | Simulate tamper scan | `{"parcel_id":"MED-104","hub_id":"HUB-C","tamper":true}` | hold decision | Demo |
+| GET | `/trust/hubs` | Hub trust board | None | `{"hubs":[...]}` | Frontend |
+| GET | `/trust/history/{hub_id}` | Trust score history | None | `{"history":[...]}` | Frontend |
+| POST | `/scenario/fail-hub` | Simulate failed hub | `{"hub_id":"HUB-B","parcel_id":"MED-104"}` | old/new routes | Demo |
+| POST | `/scenario/overload-hub` | Simulate congestion | `{"hub_id":"HUB-B","congestion":0.95}` | old/new routes | Demo |
+| POST | `/scenario/traffic-jam` | Simulate risky edge | `{"from_hub":"HUB-B","to_hub":"HUB-E","traffic_risk":0.95}` | old/new routes | Demo |
+| POST | `/scenario/weather-risk` | Simulate weather risk | `{"from_hub":"HUB-B","to_hub":"HUB-E","weather_risk":0.9}` | old/new routes | Demo |
+| POST | `/scenario/temp-breach` | Simulate cold-chain breach | `{"parcel_id":"MED-104","hub_id":"HUB-A","temperature_c":29.2}` | reroute/alert result | Demo |
+| POST | `/hardware/scan` | Accept ESP32/native scan payload | `{"device_id":"ESP32-HUB-A-01","hub_id":"HUB-A","parcel_id":"MED-104","lat":11.0168,"lng":76.9558}` | hardware scan decision | Hardware/simulator |
+| POST | `/hardware/p2p-handshake` | Log ESP-NOW relay handshake | `{"sender_hub":"HUB-A","receiver_hub":"HUB-B","parcel_id":"MED-104","message_type":"TRUST_SYNC"}` | event id and reason | Hardware/simulator |
+| GET | `/ws/status` | WebSocket availability | None | connection count | Frontend |
+| WS | `/ws` | Live event stream | WebSocket | event envelope | Frontend |
+| GET | `/` | Root project metadata | None | project summary | Browser |
+
+## WebSocket Events
+
+WebSocket messages are envelopes: `{"type":"event_type","timestamp":"...","payload":{...}}`.
+
+Implemented event types include `parcel_created`, `scan_received`, `movement_accepted`, `movement_blocked`, `movement_warning`, `route_decision`, `reroute_triggered`, `trust_updated`, `temperature_breach`, `fake_scan_blocked`, `clone_scan_blocked`, `tamper_alert`, `hub_failed`, `hub_overloaded`, `traffic_jam`, `weather_risk`, `immune_alert`, `p2p_handshake`, `metrics_updated`, `demo_reset`, `hardware_scan_received`, `hardware_scan_completed`, `ble_tag_detected`, and `esp_now_prior_acceptance`.
+
+The `simulation_update` name is not a separate current event; simulation changes are emitted through scenario-specific events plus `reroute_triggered` and `metrics_updated`.
+
+## Full Setup
+
+Clone and enter the repo:
+
+```bash
+git clone https://github.com/itsriteshs/VeriRoute_Nexus.git
+cd VeriRoute_Nexus
+```
+
+Backend:
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+./run.sh
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Reset demo data:
+
+```bash
+curl -X POST http://localhost:8000/demo/reset
+```
+
+Run tests and builds:
+
+```bash
+cd backend
+source .venv/bin/activate
+pytest
+
+cd ../frontend
+npm run typecheck
+npm run build
+```
+
+Optional hardware simulator:
+
+```bash
+cd hardware_submission/simulation
+python3 simulate_hardware.py
+```
+
+More detail: [Hardware](docs/HARDWARE.md) and [Demo Guide](docs/DEMO_GUIDE.md).
+
+## Environment Variables
+
+| File | Variable | Required | Purpose |
+| --- | --- | --- | --- |
+| `.env.example` | `BACKEND_URL` | Optional | Root-level backend URL hint for scripts/docs. |
+| `.env.example` | `FRONTEND_URL` | Optional | Root-level frontend URL hint. |
+| `.env.example` | `DEMO_MODE` | Optional | Marks local deterministic demo mode. |
+| `backend/.env.example` | `DATABASE_URL` | Optional | Intended DB URL; current app uses SQLite config from backend settings. |
+| `backend/.env.example` | `FRONTEND_ORIGIN` | Optional | CORS/documentation hint. |
+| `backend/.env.example` | `DEMO_MODE` | Optional | Demo mode flag. |
+| `frontend/.env.example` | `VITE_API_BASE_URL` | Optional | Frontend API base, defaults to `http://localhost:8000`. |
+| `frontend/.env.example` | `VITE_WS_URL` | Optional | WebSocket URL, defaults to `ws://localhost:8000/ws`. |
+
+No AI API key is required for the MVP. Explanations are deterministic/template-based in the backend.
+
+## Project Structure
+
+```text
+backend/              FastAPI app, SQLAlchemy models, engines, routes, schemas, tests, scripts
+frontend/             React/Vite dashboard, digital twin, pages, components, API client
+hardware_submission/  ESP32 firmware, simulator, CAD, PCB, wiring, hardware documentation
+data/                 Demo hubs, edges, parcels, scenarios
+docs/                 Judge-facing docs, architecture, API, simulation, hardware, evaluation
+presentation/         Demo script, backup plan, Q&A, screenshots checklist
+scripts/              Root helper scripts for backend/frontend/reset/seed
+API_CONTRACT.md       Original API coordination contract
+DEMO_RUNBOOK.md       Existing demo runbook
+PROJECT_STATUS.md     Current project status notes
+what_is_done_*.md     Team member progress trackers
+```
+
+The root also contains team workflow and integration notes such as `TEAM_WORKFLOW.md`, `INTEGRATION_CHECKLIST.md`, `PRIVACY_AND_TRUST.md`, and `CONTRIBUTING.md`. These are supporting documents; the fastest judge path is this README plus [Documentation Index](docs/INDEX.md).
+
+## Screenshots
+
+See [Screenshots To Add](docs/screenshots/README.md) for the screenshot capture list. Judges should expect dashboard overview, digital twin, fake scan blocked, cold-chain breach, trust ledger, API docs, and hardware setup screenshots.
+
+## Reliability And Fallback Plan
+
+- If RFID fails, use the frontend scan page at `/scan/HUB-A?parcel_id=MED-104`, the dashboard controls, or direct `POST /scan`.
+- If GPS permission fails, use demo coordinates in the request body.
+- If temperature sensor fails, trigger deterministic breach through `/scenario/temp-breach`.
+- If the AI explanation layer fails, use deterministic backend reason strings.
+- If hardware fails, run the software-only dashboard and `hardware_submission/simulation/simulate_hardware.py`.
+- If internet fails, run the full localhost demo with SQLite and Vite.
+
+## Scalability
+
+PacketFlow ImmuneNet can start as a campus or warehouse pilot, then expand to a city micro-hub network, multi-carrier parcel exchange, ONDC/e-commerce logistics, pharma/cold-chain compliance, disaster relief routing, and cross-border checkpoint logistics. The protocol concept scales because it separates proof ingestion, movement validation, hub trust, and routing decisions.
+
+More detail: [Judge Evaluation](docs/JUDGE_EVALUATION.md) and [Repository Audit](docs/REPO_AUDIT.md).
+
+## Privacy And Safety
+
+The system verifies logistics events, not workers or customers continuously. It stores parcel IDs, scan-time scanner/hub location, temperature state, event reasons, and hub trust scores. It does not need continuous personal location tracking. In production, device identity and parcel IDs should be scoped, rotated where appropriate, and governed by retention rules.
+
+## More Docs
+
+- [Documentation Index](docs/INDEX.md)
+- [Repository Audit](docs/REPO_AUDIT.md)
+- [Judge Evaluation](docs/JUDGE_EVALUATION.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [API Reference](docs/API.md)
+- [Demo Guide](docs/DEMO_GUIDE.md)
+- [Simulation](docs/SIMULATION.md)
+- [Hardware](docs/HARDWARE.md)
+- [Feature Status](docs/FEATURE_STATUS.md)
+- [Verification Log](docs/VERIFICATION_LOG.md)
+- [Submission Checklist](docs/SUBMISSION_CHECKLIST.md)
+- [Naming And Positioning](docs/NAMING_AND_POSITIONING.md)
+
+**We are not tracking parcels. We are proving movement.**

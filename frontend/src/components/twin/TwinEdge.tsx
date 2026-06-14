@@ -22,7 +22,22 @@ export default function TwinEdge({ edge, pulseHandshake = false }: TwinEdgeProps
 
   return (
     <g className={className}>
-      <line x1={source.x} x2={target.x} y1={source.y} y2={target.y} />
+      <line markerEnd={edge.active ? 'url(#routeArrow)' : undefined} x1={source.x} x2={target.x} y1={source.y} y2={target.y} />
+      {edge.active ? (
+        <>
+          <circle className="twin-edge__packet twin-edge__packet--one" cx={source.x} cy={source.y} r="5">
+            <animateMotion dur="2.6s" path={`M 0 0 L ${target.x - source.x} ${target.y - source.y}`} repeatCount="indefinite" />
+          </circle>
+          <circle className="twin-edge__packet twin-edge__packet--two" cx={source.x} cy={source.y} r="3.5">
+            <animateMotion
+              begin="0.9s"
+              dur="2.6s"
+              path={`M 0 0 L ${target.x - source.x} ${target.y - source.y}`}
+              repeatCount="indefinite"
+            />
+          </circle>
+        </>
+      ) : null}
       {edge.espNow ? (
         <>
           <circle className="twin-edge__pulse" cx={midX} cy={midY} r="8" />
